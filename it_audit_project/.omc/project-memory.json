@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1789026139291,
-  "projectRoot": "D:\\claude_code\\hackerking\\it_audit_project",
+  "lastScanned": 1789026384292,
+  "projectRoot": "D:\\claude_code\\hackerking\\.claude\\worktrees\\frolicking-weaving-moth\\it_audit_project",
   "techStack": {
     "languages": [
       {
@@ -57,7 +57,7 @@
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 1,
-      "lastAccessed": 1789026139143,
+      "lastAccessed": 1789026384065,
       "keyFiles": [
         "index.html"
       ]
@@ -66,7 +66,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1789026139159,
+      "lastAccessed": 1789026384066,
       "keyFiles": [
         "app.js"
       ]
@@ -75,7 +75,7 @@
       "path": "src\\data",
       "purpose": "Data files",
       "fileCount": 6,
-      "lastAccessed": 1789026139163,
+      "lastAccessed": 1789026384083,
       "keyFiles": [
         "ai-flow-defaults.js",
         "domain-brief-desc.js",
@@ -86,7 +86,7 @@
       "path": "src\\vendor",
       "purpose": "Third-party code",
       "fileCount": 1,
-      "lastAccessed": 1789026139163,
+      "lastAccessed": 1789026384084,
       "keyFiles": [
         "xlsx.full.min.js"
       ]

@@ -35,7 +35,7 @@ import {
   setCurrentScale,
 } from '../app.js';
 import {
-  esc, escFd, getCurrentAuditName, getCurrentAuditor, kstDateStr, kstISOString,
+  esc, escFd, getCurrentAuditName, getCurrentAuditor, kstDateStr, kstISOString, safeAssign,
 } from './common.js';
 import {
   computeSplitSurveyOutputs,
@@ -367,10 +367,10 @@ export function restoreGenDraft(){
   // 이제 DOMAINS는 DEFAULT_DOMAINS와 완전히 분리된 사본이라, 그대로 되살려도 원본은 오염되지 않는다.
   if(Array.isArray(saved.domains)) setDomains(saved.domains);
   if(Array.isArray(saved.selectedCodes)) saved.selectedCodes.forEach(c => selectedCodes.add(c));
-  if(saved.contentOverrides) Object.assign(contentOverrides, saved.contentOverrides);
-  if(saved.domainAuditorMap) Object.assign(domainAuditorMap, saved.domainAuditorMap);
-  if(saved.itemDeptMap) Object.assign(itemDeptMap, saved.itemDeptMap);
-  if(saved.itemAuditorMap) Object.assign(itemAuditorMap, saved.itemAuditorMap);
+  if(saved.contentOverrides) safeAssign(contentOverrides, saved.contentOverrides);
+  if(saved.domainAuditorMap) safeAssign(domainAuditorMap, saved.domainAuditorMap);
+  if(saved.itemDeptMap) safeAssign(itemDeptMap, saved.itemDeptMap);
+  if(saved.itemAuditorMap) safeAssign(itemAuditorMap, saved.itemAuditorMap);
   if(Array.isArray(saved.currentScale) && saved.currentScale.length) setCurrentScale(saved.currentScale);
   const nameEl = document.getElementById('auditNameInput');
   const purposeEl = document.getElementById('auditPurposeInput');

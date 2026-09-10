@@ -373,6 +373,7 @@ import {
   getCurrentAuditName,
   esc10,
   rcGoTo,
+  safeAssign,
 } from './features/common.js';
 // findings.js가 여전히 app.js를 통해 loadRecipients를 가져오므로(직접 features/dist.js를
 // import하도록 findings.js를 고치는 대신, 이미 검증된 findings.js는 그대로 두고) 재노출한다.
@@ -675,7 +676,7 @@ document.getElementById('checklistFileInput').addEventListener('change', (e) => 
       document.getElementById('metaDomains').textContent = DOMAINS.length + '개';
       document.getElementById('metaItems').textContent = totalItems + '개';
       document.getElementById('metaCp').textContent = totalCp + '개';
-      document.getElementById('checklistSourceLabel').innerHTML = '현재 사용 중: <b>' + file.name + '</b> (' + DOMAINS.length + '개 영역 · ' + totalItems + '항목'
+      document.getElementById('checklistSourceLabel').innerHTML = '현재 사용 중: <b>' + esc(file.name) + '</b> (' + DOMAINS.length + '개 영역 · ' + totalItems + '항목'
         + (preAssignedCount ? ' · 담당부서 사전 지정 ' + preAssignedCount + '건 자동 반영됨' : '') + ')';
       document.getElementById('useDefaultChecklistBtn').classList.remove('active');
       document.getElementById('blankChecklistBtn').classList.remove('active');
@@ -1346,14 +1347,14 @@ document.getElementById('planFileInput').addEventListener('change', (e) => {
         document.getElementById('genDept').value = plan.defaultDept;
       }
       Object.keys(itemDeptMap).forEach(k => delete itemDeptMap[k]);
-      Object.assign(itemDeptMap, plan.itemDeptMap || {});
+      safeAssign(itemDeptMap, plan.itemDeptMap || {});
       Object.keys(itemAuditorMap).forEach(k => delete itemAuditorMap[k]);
-      Object.assign(itemAuditorMap, plan.itemAuditorMap || {});
+      safeAssign(itemAuditorMap, plan.itemAuditorMap || {});
       Object.keys(contentOverrides).forEach(k => delete contentOverrides[k]);
-      Object.assign(contentOverrides, plan.contentOverrides || {});
+      safeAssign(contentOverrides, plan.contentOverrides || {});
       if(plan.scale && plan.scale.length){ currentScale = plan.scale.map(o => ({...o})); renderScaleTable(); }
       Object.keys(domainAuditorMap).forEach(k => delete domainAuditorMap[k]);
-      Object.assign(domainAuditorMap, plan.domainAuditorMap || {});
+      safeAssign(domainAuditorMap, plan.domainAuditorMap || {});
       renderDomainList(); // [v8.05] 불러온 contentOverrides(항목별 제외 여부)가 펼쳐진 패널에도 반영되도록 다시 그린다
       updateGenSummary();
     } catch(err){
@@ -1481,13 +1482,13 @@ export const MODULE_DEFS = {
   interviewState: {
     label: '인터뷰 기록', type: 'object',
     load: loadInterviewState,
-    save: (obj) => { Object.keys(interviewState).forEach(k => delete interviewState[k]); Object.assign(interviewState, obj || {}); saveInterviewState(); },
+    save: (obj) => { Object.keys(interviewState).forEach(k => delete interviewState[k]); safeAssign(interviewState, obj || {}); saveInterviewState(); },
     after: () => { renderIgSourceBanner(); if(typeof renderInterviewGuide === 'function') renderInterviewGuide(); }
   },
   interviewSchedule: {
     label: '인터뷰 일정', type: 'object',
     load: () => { try{ return JSON.parse(localStorage.getItem(INTERVIEW_SCHEDULE_KEY) || '{}'); }catch(e){ return {}; } },
-    save: (obj) => { Object.keys(interviewSchedule).forEach(k => delete interviewSchedule[k]); Object.assign(interviewSchedule, obj || {}); saveInterviewSchedule(); },
+    save: (obj) => { Object.keys(interviewSchedule).forEach(k => delete interviewSchedule[k]); safeAssign(interviewSchedule, obj || {}); saveInterviewSchedule(); },
     after: () => { const el = document.getElementById('interviewScheduleTable'); if(el) el.innerHTML = ''; }
   },
   findings: {
@@ -1499,13 +1500,13 @@ export const MODULE_DEFS = {
   scriptOverrides: {
     label: '인터뷰 질문 편집 내역 — ①기존형 (AI 응답 포함)', type: 'object',
     load: loadScriptOverrides,
-    save: (obj) => { Object.keys(scriptOverrides).forEach(k => delete scriptOverrides[k]); Object.assign(scriptOverrides, obj || {}); saveScriptOverrides(); },
+    save: (obj) => { Object.keys(scriptOverrides).forEach(k => delete scriptOverrides[k]); safeAssign(scriptOverrides, obj || {}); saveScriptOverrides(); },
     after: () => { if(typeof renderInterviewGuide === 'function') renderInterviewGuide(); }
   },
   flowOverrides: {
     label: '인터뷰 순서도·분기형 편집 내역 — ②③ (AI 응답 포함)', type: 'object',
     load: loadFlowOverrides,
-    save: (obj) => { Object.keys(flowOverrides).forEach(k => delete flowOverrides[k]); Object.assign(flowOverrides, obj || {}); saveFlowOverrides(); },
+    save: (obj) => { Object.keys(flowOverrides).forEach(k => delete flowOverrides[k]); safeAssign(flowOverrides, obj || {}); saveFlowOverrides(); },
     after: () => { if(typeof renderInterviewGuide === 'function') renderInterviewGuide(); }
   },
   customInterviewItems: {

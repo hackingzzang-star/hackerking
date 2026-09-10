@@ -83,7 +83,12 @@ export class OverrideStore {
   /** 백업 파일 복원 등에서 전체를 통째로 교체할 때 사용 */
   replaceAll(obj) {
     this.clear();
-    Object.assign(this.data, obj || {});
+    // 백업 JSON의 "__proto__"/"constructor"/"prototype" 키가 그대로 병합되면 전역
+    // Object.prototype이 오염될 수 있어, 이 세 키만 걸러내고 나머지를 복사한다.
+    Object.keys(obj || {}).forEach((k) => {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') return;
+      this.data[k] = obj[k];
+    });
     this.save();
   }
 
