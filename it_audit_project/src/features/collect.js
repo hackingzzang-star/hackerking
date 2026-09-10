@@ -176,8 +176,8 @@ export function initAggFilterUI(){
   if(!deptSel || !domSel) return;
   const depts = Array.from(new Set(aggRows.map(r => r.dept || '(부서명 미입력)'))).sort();
   const doms = Array.from(new Set(aggRows.map(r => r.domain).filter(Boolean))).sort();
-  deptSel.innerHTML = '<option value="">전체 부서</option>' + depts.map(d => '<option value="' + d.replace(/"/g,'&quot;') + '"' + (aggFilter.dept===d?' selected':'') + '>' + d + '</option>').join('');
-  domSel.innerHTML = '<option value="">전체 영역</option>' + doms.map(d => '<option value="' + d + '"' + (aggFilter.domain===d?' selected':'') + '>D-' + d + '</option>').join('');
+  deptSel.innerHTML = '<option value="">전체 부서</option>' + depts.map(d => '<option value="' + esc(d) + '"' + (aggFilter.dept===d?' selected':'') + '>' + esc(d) + '</option>').join('');
+  domSel.innerHTML = '<option value="">전체 영역</option>' + doms.map(d => '<option value="' + esc(d) + '"' + (aggFilter.domain===d?' selected':'') + '>D-' + esc(d) + '</option>').join('');
   document.getElementById('aggFilterRisk').value = aggFilter.risk;
   document.getElementById('aggFilterTier').value = aggFilter.tier;
   const searchEl = document.getElementById('aggFilterSearch');
@@ -1530,7 +1530,7 @@ export function renderAggregation(){
       let matched = 0;
       receivedSet.forEach(c => { if(planned[d] && planned[d].has(c)) matched++; });
       const pct = plannedCount ? Math.round(matched/plannedCount*100) : (receivedSet.size ? 100 : 0);
-      rows += '<tr><td>' + d + '</td><td class="num-cell">' + plannedCount + '</td>'
+      rows += '<tr><td>' + esc(d) + '</td><td class="num-cell">' + plannedCount + '</td>'
         + '<td class="num-cell">' + matched + '</td><td class="num-cell">' + pct + '%</td></tr>';
     });
     covTable.innerHTML = rows;

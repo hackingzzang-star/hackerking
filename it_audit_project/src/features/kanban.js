@@ -464,7 +464,9 @@ export function kanbanConfirmImport(mode){
     alert('전체 덮어쓰기 완료: 카드 ' + incoming.length + '개로 교체했습니다.');
   } else {
     const existing = loadKanbanCards();
-    const map = {};
+    // 가져온 파일의 카드 id가 "__proto__"이면 일반 {}에 map[c.id]=c로 대입할 때 전역
+    // Object.prototype이 오염될 수 있어, 프로토타입이 없는 객체를 맵으로 쓴다.
+    const map = Object.create(null);
     existing.forEach(c => map[c.id] = c);
     incoming.forEach(c => {
       if(map[c.id]) updated++; else added++;
@@ -568,7 +570,6 @@ export function kanbanSendFromFinding(finding, btnEl){
   if(assignee) addKnownAuditor(assignee);
   if(btnEl){
     btnEl.textContent = '✅ 칸반 카드로 보냄';
-    const origTitle = btnEl.title;
     setTimeout(() => { btnEl.textContent = '🗂 칸반 카드로 보내기'; }, 2000);
   }
 }

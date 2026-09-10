@@ -63,7 +63,7 @@ import {
 } from '../app.js';
 import {
   addKnownAuditor, esc, esc2, escFd, getCurrentAuditName, getCurrentAuditor,
-  kstDateStr, kstISOString, loadKnownAuditors, versionSuffix,
+  kstDateStr, kstISOString, loadKnownAuditors, versionSuffix, safeAssign,
 } from './common.js';
 import {
   applyOverrides,
@@ -561,18 +561,18 @@ export function importInterviewGuideBundle(file){
         finalFlow = incFlow;
         summaryMsg = '완전 교체: ① ' + curScriptCount + '개 → ' + incScriptCount + '개, ② ' + curFlowCount + '개 → ' + incFlowCount + '개';
       } else {
-        finalScript = Object.assign({}, curScript || {}, incScript);
-        finalFlow = Object.assign({}, curFlow || {}, incFlow);
+        finalScript = safeAssign(safeAssign({}, curScript || {}), incScript);
+        finalFlow = safeAssign(safeAssign({}, curFlow || {}), incFlow);
         summaryMsg = '병합: ① 총 ' + Object.keys(finalScript).length + '개, ② 총 ' + Object.keys(finalFlow).length + '개';
       }
 
       if(!confirm('인터뷰 가이드 전체 복원을 진행합니다.\n\n' + summaryMsg + '\n\n계속할까요?')) return;
 
       Object.keys(scriptOverrides).forEach(k => delete scriptOverrides[k]);
-      Object.assign(scriptOverrides, finalScript);
+      safeAssign(scriptOverrides, finalScript);
       saveScriptOverrides();
       Object.keys(flowOverrides).forEach(k => delete flowOverrides[k]);
-      Object.assign(flowOverrides, finalFlow);
+      safeAssign(flowOverrides, finalFlow);
       saveFlowOverrides();
       if(typeof renderInterviewGuide === 'function') renderInterviewGuide();
       alert('인터뷰 가이드 전체를 복원했습니다.\n\n' + summaryMsg);

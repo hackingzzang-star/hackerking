@@ -129,7 +129,7 @@ export function riskTag(risk){
 export function deptTagHtml(code){
   const arr = deptToArray(itemDeptMap[code]);
   if(arr.length === 0) return '';
-  return '<span class="tag dept-tag">👥 ' + arr.join(', ').replace(/"/g,'&quot;') + '</span>';
+  return '<span class="tag dept-tag">👥 ' + esc(arr.join(', ')) + '</span>';
 }
 
 export function downloadHtml(html, filename){
@@ -289,6 +289,18 @@ export function renderAuditorDatalist(){
 }
 
 export function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// 백업/공유 JSON 파일을 신뢰 객체(localStorage 오버레이, itemDeptMap 등)에 병합할 때 쓴다.
+// "__proto__"/"constructor"/"prototype" 키를 가진 JSON을 그대로 Object.assign하면 전역
+// Object.prototype이 오염될 수 있어, 이 세 키만 걸러내고 나머지는 그대로 복사한다.
+export function safeAssign(target, source){
+  if(!source) return target;
+  Object.keys(source).forEach(k => {
+    if(k === '__proto__' || k === 'constructor' || k === 'prototype') return;
+    target[k] = source[k];
+  });
+  return target;
+}
 
 export function escFd(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 

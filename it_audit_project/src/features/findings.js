@@ -386,7 +386,7 @@ export function buildFindingNoticeHtml(finding){
         + '<div class="fn-sign-grid">'
           + '<div class="fn-sign-cell"><label>담당자 (' + escFd(finding.assignee || '________') + ')</label>'
             + (finding.signatureDataUrl
-                ? ('<img src="' + finding.signatureDataUrl + '" alt="담당자 서명" style="height:60px;margin-top:20px;display:block;">' + (finding.signatureSignedAt ? ('<div style="font-size:10px;color:#5a6472;margin-top:4px;">서명일시: ' + escFd(new Date(finding.signatureSignedAt).toLocaleString('ko-KR')) + '</div>') : ''))
+                ? ('<img src="' + escFd(finding.signatureDataUrl) + '" alt="담당자 서명" style="height:60px;margin-top:20px;display:block;">' + (finding.signatureSignedAt ? ('<div style="font-size:10px;color:#5a6472;margin-top:4px;">서명일시: ' + escFd(new Date(finding.signatureSignedAt).toLocaleString('ko-KR')) + '</div>') : ''))
                 : '<div class="fn-sign-space"></div>')
             + '</div>'
           + '<div class="fn-sign-cell"><label>감사역</label><div class="fn-sign-space"></div></div>'

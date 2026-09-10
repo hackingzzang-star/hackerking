@@ -24,7 +24,7 @@ import {
   STORAGE_ITEMS,
 } from '../app.js';
 import {
-  escFd, getCurrentAuditName, kstDateStr, kstISOString, kstDateTimeStr, versionSuffix,
+  escFd, getCurrentAuditName, kstDateStr, kstISOString, kstDateTimeStr, versionSuffix, safeAssign,
 } from './common.js';
 import {
   renderDistDomainChecks,
@@ -229,7 +229,7 @@ export function importAllData(file){
       if(bundle.commTemplates) localStorage.setItem(COMM_TEMPLATE_STORAGE_KEY, JSON.stringify(bundle.commTemplates));
       if(bundle.interviewState){
         Object.keys(interviewState).forEach(k => delete interviewState[k]);
-        Object.assign(interviewState, bundle.interviewState);
+        safeAssign(interviewState, bundle.interviewState);
         saveInterviewState();
       }
       if(Array.isArray(bundle.findings)){
@@ -239,12 +239,12 @@ export function importAllData(file){
       }
       if(bundle.scriptOverrides){
         Object.keys(scriptOverrides).forEach(k => delete scriptOverrides[k]);
-        Object.assign(scriptOverrides, bundle.scriptOverrides);
+        safeAssign(scriptOverrides, bundle.scriptOverrides);
         saveScriptOverrides();
       }
       if(bundle.flowOverrides){
         Object.keys(flowOverrides).forEach(k => delete flowOverrides[k]);
-        Object.assign(flowOverrides, bundle.flowOverrides);
+        safeAssign(flowOverrides, bundle.flowOverrides);
         saveFlowOverrides();
       }
       if(Array.isArray(bundle.customInterviewItems)){
@@ -263,7 +263,7 @@ export function importAllData(file){
       }
       if(bundle.interviewSchedule){
         Object.keys(interviewSchedule).forEach(k => delete interviewSchedule[k]);
-        Object.assign(interviewSchedule, bundle.interviewSchedule);
+        safeAssign(interviewSchedule, bundle.interviewSchedule);
         saveInterviewSchedule();
       }
       renderRecipientsTable();

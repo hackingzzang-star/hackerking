@@ -773,13 +773,13 @@ export function renderItem(domainCode, item, scale){
       + 'data-domain="' + domainCode + '" data-code="' + code + '" data-risk="' + risk + '"></td>'
     ).join('');
     const label = circledNum(i) + ' ' + cp;
-    const displayLabel = '<span class="cp-row-num">' + (i+1) + '</span> ' + cp;
+    const displayLabel = '<span class="cp-row-num">' + (i+1) + '</span> ' + esc(cp);
     return '<tr class="cp-row" data-cptext="' + label.replace(/"/g,'&quot;') + '">'
       + '<td class="q">' + displayLabel + '</td>' + opts + '</tr>';
   }).join('');
   const evidenceHtml = (item.evidence || []).map((e, i) =>
     '<div class="evi-item">'
-    + '<label><input type="checkbox" class="evi-box" data-evi-idx="' + (i+1) + '" data-evi-name="' + e.replace(/"/g,'&quot;') + '"> ' + e + '</label>'
+    + '<label><input type="checkbox" class="evi-box" data-evi-idx="' + (i+1) + '" data-evi-name="' + e.replace(/"/g,'&quot;') + '"> ' + esc(e) + '</label>'
     + '<div class="evi-filename-hint" style="display:none;"></div>'
     + '</div>'
   ).join('') + '<div class="evi-item evi-custom-item"><label style="display:block;color:var(--ink-soft);font-size:11px;margin-bottom:3px;">📎 목록에 없는 자료명, 또는 위 "확인하려는 것"에 대한 설명을 자유롭게 적어주세요 — 파일명·자료가 있는 위치·구두 설명 등 무엇이든 좋습니다</label>'
@@ -788,7 +788,7 @@ export function renderItem(domainCode, item, scale){
   const ownName = 'own-' + code;
   const famName = 'fam-' + code;
   const scaleHeaders = scale.map(o => '<th>' + o.value + '</th>').join('');
-  const lawHtml = law ? '<div class="law-note">관련 법령·기준: ' + law + '</div>' : '';
+  const lawHtml = law ? '<div class="law-note">관련 법령·기준: ' + esc(law) + '</div>' : '';
   const isMaturityScale = scale.length === 5 && scale.some(o => o.value.indexOf('매우') !== -1);
   const cpHeaderText = isMaturityScale
     ? '<span class="item-step-num">③</span> 세부 체크포인트 — 각 항목이 실제로 얼마나 잘 이행되고 있는지 수준을 평가해 응답해 주십시오 (완전히 이행되어 있으면 "매우 잘함", 전혀 이행되지 않았으면 "매우 미흡")'
@@ -796,8 +796,8 @@ export function renderItem(domainCode, item, scale){
 
   return '\n    <div class="item" data-code="' + code + '" data-domain="' + domainCode + '" data-risk="' + risk + '" data-title="' + item.title.replace(/"/g,'&quot;') + '" data-law="' + law.replace(/"/g,'&quot;') + '">'
     + '<div class="item-head"><div class="item-no">' + code + '</div>'
-    + '<div class="item-title-wrap"><div class="item-title">' + item.title + '</div>'
-    + '<div class="item-desc">' + item.desc + '</div>' + lawHtml + '</div>'
+    + '<div class="item-title-wrap"><div class="item-title">' + esc(item.title) + '</div>'
+    + '<div class="item-desc">' + esc(item.desc) + '</div>' + lawHtml + '</div>'
     + '<div class="item-tags">' + riskTag(risk) + deptTagHtml(code) + '</div></div>'
 
     + '<div class="owner-check"><label><span class="item-step-num">①</span> 이 업무가 귀 부서의 담당 업무입니까?</label>'
@@ -1286,21 +1286,21 @@ export function renderEditItemList(){
       const deptLabel = dept.join(', ') || '(미지정)';
       const isOpen = openEditKey === key;
       html += '<div class="edit-item' + (excluded ? ' excluded' : '') + '">'
-        + '<div class="edit-item-head" data-key="' + key + '"><span><span class="eh-code">' + key + '</span><span class="eh-title">' + title + '</span>'
+        + '<div class="edit-item-head" data-key="' + key + '"><span><span class="eh-code">' + key + '</span><span class="eh-title">' + esc(title) + '</span>'
         + ' <span class="eh-dept-badge">' + deptLabel + '</span>' + (excluded ? ' <span class="eh-excluded-badge">제외됨</span>' : '') + '</span>'
         + '<span class="eh-caret">' + (isOpen ? '▲ 접기' : '▼ 검토 · 담당부서 지정') + '</span></div>'
         + '<div class="edit-item-body' + (isOpen ? ' open' : '') + '" data-key="' + key + '">'
         + '<label><input type="checkbox" class="ov-excluded" ' + (excluded ? 'checked' : '') + '> 이 항목을 이번 설문에서 제외(비활성화)</label>'
         + '<label>담당 부서(복수 선택 가능)</label>' + multiDeptSelectHtml(key, dept)
         + '<label>항목명</label><input type="text" class="ov-title" value="' + title.replace(/"/g,'&quot;') + '">'
-        + '<label>설명 / 질문</label><textarea class="ov-desc" rows="2">' + desc + '</textarea>'
+        + '<label>설명 / 질문</label><textarea class="ov-desc" rows="2">' + esc(desc) + '</textarea>'
         + '<div class="edit-row-2col">'
           + '<div><label>위험도</label><select class="ov-risk"><option value="상"' + (risk==='상'?' selected':'') + '>상</option><option value="중"' + (risk==='중'?' selected':'') + '>중</option><option value="하"' + (risk==='하'?' selected':'') + '>하</option></select></div>'
           + '<div><label>관련 법령</label><input type="text" class="ov-law" value="' + String(law).replace(/"/g,'&quot;') + '"></div>'
         + '</div>'
-        + '<label>세부 체크포인트 (한 줄에 하나씩)</label><textarea class="ov-checkpoints" rows="4">' + checkpoints + '</textarea>'
+        + '<label>세부 체크포인트 (한 줄에 하나씩)</label><textarea class="ov-checkpoints" rows="4">' + esc(checkpoints) + '</textarea>'
         + '<div class="edit-hint">화면 표시 시 ①②③④ 번호가 자동으로 붙습니다.</div>'
-        + '<label>증빙자료 목록 (한 줄에 하나씩)</label><textarea class="ov-evidence" rows="3">' + evidence + '</textarea>'
+        + '<label>증빙자료 목록 (한 줄에 하나씩)</label><textarea class="ov-evidence" rows="3">' + esc(evidence) + '</textarea>'
         + '</div></div>';
     });
   });
