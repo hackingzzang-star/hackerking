@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1789026139291,
+  "projectRoot": "D:\\claude_code\\hackerking\\it_audit_project",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "vite",
+        "version": "5.4.0",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase",
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "feature-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1789026139143,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1789026139159,
+      "keyFiles": [
+        "app.js"
+      ]
+    },
+    "src\\data": {
+      "path": "src\\data",
+      "purpose": "Data files",
+      "fileCount": 6,
+      "lastAccessed": 1789026139163,
+      "keyFiles": [
+        "ai-flow-defaults.js",
+        "domain-brief-desc.js",
+        "domains-data.js"
+      ]
+    },
+    "src\\vendor": {
+      "path": "src\\vendor",
+      "purpose": "Third-party code",
+      "fileCount": 1,
+      "lastAccessed": 1789026139163,
+      "keyFiles": [
+        "xlsx.full.min.js"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

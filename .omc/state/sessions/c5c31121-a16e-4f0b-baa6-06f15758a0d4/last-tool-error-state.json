@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sed -n '1,60p' references/subagent-templates.md 2>/dev/null\\necho \\\"=====\\\"\\nsed -n '1,60p' references/mcp-servers.md 2>/dev/null\",\"description\":\"Peek at subagent and mcp reference docs\"}",
+  "error": "Exit code 2\n=====",
+  "timestamp": "2026-09-10T07:04:01.478Z",
+  "retry_count": 1
+}
