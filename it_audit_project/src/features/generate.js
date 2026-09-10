@@ -729,7 +729,7 @@ export function renderGroundsSuggestions(selectedDoms){
       allReasons.push(r.text);
       const added = curVal.includes(r.text);
       return '<button type="button" class="gsb-chip' + (added ? ' added' : '') + '" data-text="' + r.text.replace(/"/g,'&quot;') + '"' + (added ? ' disabled' : '') + '>'
-        + '<span class="gsb-tag">' + r.tag + '</span><span>' + (added ? '✓ 추가됨 — ' : '') + r.text + '</span></button>';
+        + '<span class="gsb-tag">' + esc(r.tag) + '</span><span>' + (added ? '✓ 추가됨 — ' : '') + esc(r.text) + '</span></button>';
     }).join('');
     return '<div class="gsb-domain"><div class="gsb-dtitle">D-' + g.code + ' ' + g.title + '</div><div class="gsb-chip-row">' + chips + '</div></div>';
   }).join('');
@@ -823,7 +823,7 @@ export function renderItem(domainCode, item, scale){
     + '<div class="cp-skip-notice">🚫 "타 부서 담당"으로 응답하셨으므로 아래 세부 체크포인트 작성을 생략합니다. 담당 부서명만 입력하시고 다음 항목으로 진행해 주십시오.</div>'
     + '<table class="check-tbl"><tr><th style="text-align:left;width:auto;">' + cpHeaderText + '</th>' + scaleHeaders + '</tr>' + rows + '</table>'
     + '<div class="item-foot"><div class="cell"><label>제출 가능 증빙자료 — 위 점검 내용을 확인·입증할 수 있는 자료라면 목록에 없어도 자유롭게 추가해 주세요</label>'
-    + (item.desc ? '<div class="evi-purpose-hint">🎯 이 항목에서 감사팀이 확인하려는 것: ' + item.desc.replace(/"/g,'&quot;') + ' — 아래 목록은 참고용 예시이며, 이를 입증할 수 있는 자료라면 형식에 관계없이 자유롭게 적어 주십시오.</div>' : '')
+    + (item.desc ? '<div class="evi-purpose-hint">🎯 이 항목에서 감사팀이 확인하려는 것: ' + esc(item.desc) + ' — 아래 목록은 참고용 예시이며, 이를 입증할 수 있는 자료라면 형식에 관계없이 자유롭게 적어 주십시오.</div>' : '')
     + '<div class="evi-list">' + evidenceHtml + '</div></div>'
     + '<div class="cell"><label>비고 — 응답이 "아니오"·"부분"인 경우 그 사유를, 또는 향후 보완 계획이 있다면 함께 적어주세요</label>'
     + '<textarea class="note-input" rows="3" placeholder="예) 정책 문서 초안은 마련되었으나 아직 최종 결재 전 단계이며, 8월 중 결재 완료 예정입니다" oninput="autoGrowTextarea(this); syncItemFootHeight(this.closest(&quot;.item&quot;))"></textarea></div></div>'
