@@ -87,6 +87,33 @@ import {
 } from './report.js';
 import { exportAssignedPacketsByAuditor } from './data.js';
 
+// [v8.60 버그수정] 인터뷰 가이드 툴바(.ig-toolbar-label/.ig-toolbar-group-title/.ig-dl-btn)가
+// 'IBM Plex Mono' 모노스페이스 폰트를 쓰는데, 이 폰트에는 이모지 글리프가 없어서 폐쇄망 PC에서
+// 컬러 이모지 폰트를 못 받아오면 브라우저가 엉뚱한 기호 폰트로 대체해 아이콘이 깨져 보이는
+// 문제가 있었다(예: 🔎→돋보기 아닌 다른 기호, 📤→삼각형 비슷한 기호). 이모지 문자만 별도
+// span으로 감싸 Windows/macOS에 이미 내장된 이모지·기호 전용 폰트로 렌더링을 강제해 해결.
+// 인터넷 연결이나 폰트 다운로드가 전혀 필요 없다(전부 OS 내장 폰트).
+function igIconSpan(ch){
+  return '<span style="font-family:\'Segoe UI Emoji\',\'Segoe UI Symbol\',\'Noto Color Emoji\',\'Apple Color Emoji\',\'Malgun Gothic\',sans-serif;">' + ch + '</span>';
+}
+
+// [v8.60 후속 수정] 이모지는 고쳤지만 이 툴바(.ig-toolbar-*, .ig-dl-btn, .ig-mode-btn)의
+// 글자 크기(9.5~11.5px)와 여백(상하 패딩 2~6px)이 index.html의 CSS에서 원래 빡빡하게
+// 잡혀 있어서, 아이콘이 여러 개 붙어 있으면 여전히 찌부러진 느낌이 났다. index.html은
+// 건드리지 않기로 했으므로, 이 영역(#ig-toolbar-wrap)에만 적용되는 <style> 블록을
+// innerHTML로 직접 주입해 이 툴바의 글자 크기·여백만 살짝 키운다(다른 탭·다른 영역에는
+// 전혀 영향 없음 — #ig-toolbar-wrap 안쪽 클래스만 선택자로 지정했기 때문).
+const IG_TOOLBAR_SIZE_FIX_CSS = '<style>'
+  + '#ig-toolbar-wrap .ig-toolbar-panel{padding:10px 14px;}'
+  + '#ig-toolbar-wrap .ig-toolbar-group{padding:8px 12px 10px;}'
+  + '#ig-toolbar-wrap .ig-toolbar-group-title{font-size:11px;}'
+  + '#ig-toolbar-wrap .ig-toolbar-label{font-size:11.5px;padding:4px 10px;}'
+  + '#ig-toolbar-wrap .ig-stat{font-size:12.5px;}'
+  + '#ig-toolbar-wrap .ig-dl-btn{font-size:12px;padding:8px 13px;}'
+  + '#ig-toolbar-wrap .ig-mode-btn{font-size:12.5px;padding:8px 15px;}'
+  + '#ig-toolbar-wrap .ig-toolbar-row{padding:11px 0;gap:10px;}'
+  + '</style>';
+
 export function renderIppfFlow(stats){
   const el = document.getElementById('ippfFlow');
   if(!el) return;
@@ -2315,7 +2342,7 @@ export function renderInterviewGuide(){
   if(!container) return;
   renderIgSourceBanner();
 
-  const modeToggleHtml = '<div class="ig-mode-toggle">'
+  const modeToggleHtml = IG_TOOLBAR_SIZE_FIX_CSS + '<div class="ig-mode-toggle">'
     + '<button class="ig-mode-btn' + (igViewMode==='data'?' active':'') + '" data-mode="data">📊 응답 데이터 기준</button>'
     + '<button class="ig-mode-btn' + (igViewMode==='all'?' active':'') + '" data-mode="all">📋 전체 항목 검토·편집(응답 무관)</button>'
     + '<button type="button" id="igManualRefreshBtn" class="ig-mode-btn" style="margin-left:auto;" title="① 설문지 생성 탭에서 체크리스트를 새로 업로드/변경한 뒤에도 이 화면이 그대로면 눌러주세요 — 지금 등록된 체크리스트 기준으로 다시 그립니다.">🔄 체크리스트 최신 반영</button>'
@@ -2399,9 +2426,9 @@ export function renderInterviewGuide(){
 
   toolbarWrap.innerHTML = modeToggleHtml + '<div class="ig-toolbar-panel">'
     + '<div class="ig-toolbar-group ig-tbg-view">'
-    + '<div class="ig-toolbar-group-title">🔎 보기·필터 설정</div>'
+    + '<div class="ig-toolbar-group-title">' + igIconSpan('🔎') + ' 보기·필터 설정</div>'
     + '<div class="ig-toolbar-row">'
-      + '<span class="ig-toolbar-label">🔎 필터</span>'
+      + '<span class="ig-toolbar-label">' + igIconSpan('🔎') + ' 필터</span>'
       + '<div class="ig-stat">' + (igViewMode==='all' ? '전체 ' : '집계된 ') + '항목 <b>' + codes.length + '</b>개 (도메인 <b>' + new Set(codes.map(c=>c.split('-')[0])).size + '</b>개) · 완료 표시 <b id="igDoneCount">0</b>개' + (codes.filter(c => aiNoContextCodes.has(c)).length > 0 ? ' · 🧪 AI 초안(미반영) <b style="color:#8a3b1f;">' + codes.filter(c => aiNoContextCodes.has(c)).length + '</b>개' : '') + '</div>'
       + '<select id="igDomainFilter" style="min-width:170px;padding:5px 7px;border-radius:5px;border:1px solid #c9d0e0;">'
         + '<option value="">전체 영역</option>'
@@ -2415,7 +2442,7 @@ export function renderInterviewGuide(){
       + '<label style="display:flex;align-items:center;gap:5px;color:#8a3b1f;cursor:pointer;" title="사실·우려사항 없이 AI 프롬프트를 돌려 받은 항목만 모아 보여줍니다 — 사실·우려사항을 파악한 뒤 다시 돌릴 대상을 고를 때 씁니다."><input type="checkbox" id="igNoContextOnly"> 🧪 AI 초안(미반영)만</label>'
     + '</div>'
     + '<div class="ig-toolbar-row">'
-      + '<span class="ig-toolbar-label">🧭 화면·팩 그룹 기준</span>'
+      + '<span class="ig-toolbar-label">' + igIconSpan('🧭') + ' 화면·팩 그룹 기준</span>'
       + '<select id="igPackSortMode" style="min-width:180px;padding:5px 7px;border-radius:5px;border:1px solid #c9d0e0;">'
         + '<option value="domain"' + (igGroupMode==='domain'?' selected':'') + '>영역순 (기본)</option>'
         + '<option value="risk"' + (igGroupMode==='risk'?' selected':'') + '>위험도순</option>'
@@ -2427,37 +2454,37 @@ export function renderInterviewGuide(){
     + '</div>'
     + '</div>'
     + '<div class="ig-toolbar-group ig-tbg-export">'
-    + '<div class="ig-toolbar-group-title">📤 내보내기·협업</div>'
+    + '<div class="ig-toolbar-group-title">' + igIconSpan('📤') + ' 내보내기·협업</div>'
     + '<div class="ig-toolbar-row">'
-      + '<span class="ig-toolbar-label">📤 내보내기·협업</span>'
-      + '<button class="ig-dl-btn" id="igDownloadBtn">⬇ 인터뷰 기록 CSV 다운로드</button>'
-      + '<button class="ig-dl-btn" id="igPackBtn" style="background:var(--good);" title="인쇄·휴대용 읽기 전용 사본입니다 — 입력은 이 인터뷰 가이드 화면에서 해 주세요">📦 인터뷰 팩 내보내기</button>'
+      + '<span class="ig-toolbar-label">' + igIconSpan('📤') + ' 내보내기·협업</span>'
+      + '<button class="ig-dl-btn" id="igDownloadBtn">' + igIconSpan('⬇') + ' 인터뷰 기록 CSV 다운로드</button>'
+      + '<button class="ig-dl-btn" id="igPackBtn" style="background:var(--good);" title="인쇄·휴대용 읽기 전용 사본입니다 — 입력은 이 인터뷰 가이드 화면에서 해 주세요">' + igIconSpan('📦') + ' 인터뷰 팩 내보내기</button>'
       + '<span class="ig-toolbar-sep"></span>'
-      + '<button class="ig-dl-btn" id="igExportPacketBtn" style="background:var(--indigo);" title="협동 감사 시, 내 인터뷰 기록을 동료 감사역에게 전달할 파일로 내보냅니다">📤 내 기록 내보내기(협업용)</button>'
-      + '<button class="ig-dl-btn" id="igImportPacketBtn" style="background:var(--indigo);" title="동료 감사역이 내보낸 인터뷰 기록을 지금 화면과 합칩니다(자동 덮어쓰기 없음)">📥 동료 기록 불러와 합치기</button>'
+      + '<button class="ig-dl-btn" id="igExportPacketBtn" style="background:var(--indigo);" title="협동 감사 시, 내 인터뷰 기록을 동료 감사역에게 전달할 파일로 내보냅니다">' + igIconSpan('📤') + ' 내 기록 내보내기(협업용)</button>'
+      + '<button class="ig-dl-btn" id="igImportPacketBtn" style="background:var(--indigo);" title="동료 감사역이 내보낸 인터뷰 기록을 지금 화면과 합칩니다(자동 덮어쓰기 없음)">' + igIconSpan('📥') + ' 동료 기록 불러와 합치기</button>'
       + '<span class="ig-toolbar-sep"></span>'
-      + '<button class="ig-dl-btn" id="igAssignExportBtn" style="background:#7a5a28;" title="진행 감사자가 지정된 항목을 사람별로 나눠, 각자에게 보낼 배정 파일(질문 스크립트 포함)을 한 번에 만듭니다 — 작업 시작 전 배정용입니다">🗂 감사역별로 나눠 배정 내보내기</button>'
+      + '<button class="ig-dl-btn" id="igAssignExportBtn" style="background:#7a5a28;" title="진행 감사자가 지정된 항목을 사람별로 나눠, 각자에게 보낼 배정 파일(질문 스크립트 포함)을 한 번에 만듭니다 — 작업 시작 전 배정용입니다">' + igIconSpan('🗂') + ' 감사역별로 나눠 배정 내보내기</button>'
       + '<input type="file" id="igPacketFileInput" accept=".json" style="display:none;">'
     + '</div>'
     + '</div>'
     + '<div class="ig-toolbar-group ig-tbg-ai">'
-    + '<div class="ig-toolbar-group-title">🤖 AI 생성·대량 편집</div>'
+    + '<div class="ig-toolbar-group-title">' + igIconSpan('🤖') + ' AI 생성·대량 편집</div>'
     + '<div class="ig-toolbar-row">'
-      + '<span class="ig-toolbar-label">🗺 순서도·분기형 대량 편집</span>'
-      + '<button class="ig-dl-btn" id="igFlowXlsxExportBtn" style="background:#7a5a28;" title="전 항목의 ②순서도·③분기형 질문·결함 시나리오를 엑셀로 내보냅니다 — 여러 항목을 한 번에 작성할 때 편리합니다">📤 순서도·분기형 엑셀로 내보내기</button>'
-      + '<button class="ig-dl-btn" id="igFlowXlsxImportBtn" style="background:#7a5a28;" title="위에서 받은 엑셀 서식을 채워서 다시 올리면, 항목 코드가 일치하는 내용을 한 번에 반영합니다">📥 엑셀에서 순서도·분기형 가져오기</button>'
+      + '<span class="ig-toolbar-label">' + igIconSpan('🗺') + ' 순서도·분기형 대량 편집</span>'
+      + '<button class="ig-dl-btn" id="igFlowXlsxExportBtn" style="background:#7a5a28;" title="전 항목의 ②순서도·③분기형 질문·결함 시나리오를 엑셀로 내보냅니다 — 여러 항목을 한 번에 작성할 때 편리합니다">' + igIconSpan('📤') + ' 순서도·분기형 엑셀로 내보내기</button>'
+      + '<button class="ig-dl-btn" id="igFlowXlsxImportBtn" style="background:#7a5a28;" title="위에서 받은 엑셀 서식을 채워서 다시 올리면, 항목 코드가 일치하는 내용을 한 번에 반영합니다">' + igIconSpan('📥') + ' 엑셀에서 순서도·분기형 가져오기</button>'
       + '<input type="file" id="igFlowXlsxFileInput" accept=".xlsx,.xls" style="display:none;">'
       + '<span style="font-size:10.5px;color:var(--ink-faint,#8a93a3);">— 항목 하나만 빠르게 손볼 때는 카드의 "🗺✏ 순서도 보기·편집 (새 창)"이 더 편합니다</span>'
     + '</div>'
     + '<div class="ig-toolbar-row">'
-      + '<span class="ig-toolbar-label">🤖 AI로 인터뷰 콘텐츠 만들기</span>'
+      + '<span class="ig-toolbar-label">' + igIconSpan('🤖') + ' AI로 인터뷰 콘텐츠 만들기</span>'
       + '<select id="igAiPromptDomainSelect" style="min-width:220px;padding:5px 7px;border-radius:5px;border:1px solid #c9d0e0;">'
         + Array.from(new Set(codes.map(c => c.split('-')[0]))).sort().map(dc => { const dom = igFindDomain(dc); return '<option value="' + dc + '"' + (igDomainFilter === dc ? ' selected' : '') + '>D-' + dc + (dom ? ' ' + esc(dom.title) : '') + '</option>'; }).join('')
       + '</select>'
       + '<select id="igAiPromptItemSelect" style="min-width:260px;padding:5px 7px;border-radius:5px;border:1px solid #c9d0e0;">'
         + igAiPromptItemOptionsHtml(igDomainFilter || Array.from(new Set(codes.map(c => c.split('-')[0]))).sort()[0] || '', '')
       + '</select>'
-      + '<button class="ig-dl-btn" id="igAiPromptBtn" style="background:#4a5a8a;" title="항목 선택을 \'전체 항목\'으로 두면 도메인 전체를, 특정 항목을 고르면 그 항목 하나만 대상으로, 어떤 AI에게든 붙여넣어 ①기존형·②순서도 콘텐츠를 받아올 수 있는 프롬프트를 새 창으로 만듭니다 — 받은 JSON 응답은 같은 창에서 바로 가져오기 할 수 있습니다">🤖 AI 프롬프트 제작기 (새 창)</button>'
+      + '<button class="ig-dl-btn" id="igAiPromptBtn" style="background:#4a5a8a;" title="항목 선택을 \'전체 항목\'으로 두면 도메인 전체를, 특정 항목을 고르면 그 항목 하나만 대상으로, 어떤 AI에게든 붙여넣어 ①기존형·②순서도 콘텐츠를 받아올 수 있는 프롬프트를 새 창으로 만듭니다 — 받은 JSON 응답은 같은 창에서 바로 가져오기 할 수 있습니다">' + igIconSpan('🤖') + ' AI 프롬프트 제작기 (새 창)</button>'
       + '<span style="font-size:10.5px;color:var(--ink-faint,#8a93a3);">— 도메인만 고르면 전체 항목, 항목까지 고르면 그 항목 하나만 대상으로 프롬프트가 만들어집니다</span>'
     + '</div>'
     + '</div>'
@@ -2467,11 +2494,11 @@ export function renderInterviewGuide(){
     // 전용 백업/복원 버튼을 추가했다. 데이터 관리 탭의 개별 백업(scriptOverrides/flowOverrides)은
     // 항목 하나만 골라 다루고 싶을 때를 위해 그대로 남겨두었다.
     + '<div class="ig-toolbar-group ig-tbg-backup">'
-    + '<div class="ig-toolbar-group-title">🗄 백업·검토</div>'
+    + '<div class="ig-toolbar-group-title">' + igIconSpan('🗄') + ' 백업·검토</div>'
     + '<div class="ig-toolbar-row">'
-      + '<span class="ig-toolbar-label">🗄 인터뷰 가이드 전체 백업</span>'
-      + '<button class="ig-dl-btn" id="igGuideBundleExportBtn" style="background:#2e5a4a;" title="①기존형 질문 편집 내역 + ②순서도·분기형 편집 내역을 하나의 파일로 함께 내보냅니다. AI 프롬프트 제작기로 채운 내용도 전부 포함됩니다.">📤 인터뷰 가이드 전체 백업 (①+②, AI 응답 포함)</button>'
-      + '<button class="ig-dl-btn" id="igGuideBundleImportBtn" style="background:#2e5a4a;" title="위 버튼으로 받은 파일을 불러와 ①②를 한 번에 복원합니다.">📥 인터뷰 가이드 전체 복원</button>'
+      + '<span class="ig-toolbar-label">' + igIconSpan('🗄') + ' 인터뷰 가이드 전체 백업</span>'
+      + '<button class="ig-dl-btn" id="igGuideBundleExportBtn" style="background:#2e5a4a;" title="①기존형 질문 편집 내역 + ②순서도·분기형 편집 내역을 하나의 파일로 함께 내보냅니다. AI 프롬프트 제작기로 채운 내용도 전부 포함됩니다.">' + igIconSpan('📤') + ' 인터뷰 가이드 전체 백업 (①+②, AI 응답 포함)</button>'
+      + '<button class="ig-dl-btn" id="igGuideBundleImportBtn" style="background:#2e5a4a;" title="위 버튼으로 받은 파일을 불러와 ①②를 한 번에 복원합니다.">' + igIconSpan('📥') + ' 인터뷰 가이드 전체 복원</button>'
       + '<input type="file" id="igGuideBundleFileInput" accept=".json" style="display:none;">'
       + '<span style="font-size:10.5px;color:var(--ink-faint,#8a93a3);">— 이 도구에서 AI로 채운 인터뷰 가이드 내용을 다른 사람(감사역·개발 담당)에게 통째로 넘길 때는 이 버튼을 쓰세요. \"⚙ 데이터 관리\"의 개별 백업(①만/②만)과는 별개로, 여기서는 항상 ①②를 함께 다룹니다.</span>'
     + '</div>'

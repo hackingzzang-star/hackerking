@@ -28,6 +28,15 @@ import { kanbanSendFromFinding } from './kanban.js';
 
 export let currentEditingFindingId = null;
 
+// [v8.60 버그수정] .fd-edit-badge/.gen-small-btn/.fn-print-btn 등이 'IBM Plex Mono' 또는
+// generic monospace 폰트를 쓰는데, 이 폰트엔 이모지 글리프가 없어서 폐쇄망 PC에서 컬러
+// 이모지 폰트를 못 받아오면 브라우저가 엉뚱한 기호로 대체해 아이콘이 깨져 보이는 문제가
+// 있었다. 이모지 문자만 별도 span으로 감싸 OS 내장 이모지·기호 전용 폰트로 렌더링을 강제해
+// 해결(인터넷 연결·폰트 다운로드 불필요). interview.js/kanban.js에도 동일한 헬퍼가 있다.
+function igIconSpan(ch){
+  return '<span style="font-family:\'Segoe UI Emoji\',\'Segoe UI Symbol\',\'Noto Color Emoji\',\'Apple Color Emoji\',\'Malgun Gothic\',sans-serif;">' + ch + '</span>';
+}
+
 export function getFindingCandidates(showAll){
   const codeSet = new Set(aggRows.map(r => r.code).filter(Boolean));
   const registeredCodes = new Set(findings.map(f => f.code).filter(Boolean));
@@ -61,7 +70,7 @@ export function renderFindingEditForm(finding){
   wrap.style.display = 'block';
   wrap.innerHTML = '<div class="ig-edit-form" data-dirty="0" style="display:block;position:static;">'
     + '<div class="fd-edit-heading">'
-      + (_fdIsNew ? '<span class="fd-edit-badge fd-edit-badge-new">🆕 신규 등록</span>' : '<span class="fd-edit-badge">✏ 수정 중</span>')
+      + (_fdIsNew ? '<span class="fd-edit-badge fd-edit-badge-new">' + igIconSpan('🆕') + ' 신규 등록</span>' : '<span class="fd-edit-badge">' + igIconSpan('✏') + ' 수정 중</span>')
       + (finding.code ? ('<span class="fd-edit-code">' + esc(finding.code) + '</span>') : '<span class="fd-edit-code fd-edit-code-free">자유등록</span>')
       + '<span class="fd-edit-heading-title" id="fdEditHeadingTitle">' + esc(finding.title || '(제목 없음)') + '</span>'
     + '</div>'
@@ -85,7 +94,7 @@ export function renderFindingEditForm(finding){
       + '<canvas id="fd-sig-canvas" width="360" height="120" style="border:1px dashed var(--line);border-radius:4px;background:#fff;touch-action:none;cursor:crosshair;display:block;max-width:100%;"></canvas>'
       + '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
         + '<button type="button" class="gen-small-btn" id="fdSigClearBtn" style="margin:0;">지우기</button>'
-        + '<label class="gen-small-btn" style="margin:0;cursor:pointer;display:inline-block;">📎 서명 사진 업로드<input type="file" id="fd-sig-file" accept="image/*" style="display:none;"></label>'
+        + '<label class="gen-small-btn" style="margin:0;cursor:pointer;display:inline-block;">' + igIconSpan('📎') + ' 서명 사진 업로드<input type="file" id="fd-sig-file" accept="image/*" style="display:none;"></label>'
         + '<span id="fdSigStatus" style="font-size:11px;color:var(--ink-soft);"></span>'
       + '</div>'
     + '</div>'
@@ -110,8 +119,8 @@ export function renderFindingEditForm(finding){
       + '</div>'
     + '</div>'
     + '<div class="ig-edit-actions">'
-      + '<button class="gen-small-btn" id="fdSaveBtn" style="margin:0;background:var(--navy);color:#f4efe2;">💾 저장</button>'
-      + '<button class="gen-small-btn" id="fdCancelBtn" style="margin:0;">✕ 취소</button>'
+      + '<button class="gen-small-btn" id="fdSaveBtn" style="margin:0;background:var(--navy);color:#f4efe2;">' + igIconSpan('💾') + ' 저장</button>'
+      + '<button class="gen-small-btn" id="fdCancelBtn" style="margin:0;">' + igIconSpan('✕') + ' 취소</button>'
     + '</div>'
   + '</div>';
 
@@ -369,7 +378,7 @@ export function buildFindingNoticeHtml(finding){
     + '.fn-print-btn{margin:16px 0;font-family:monospace;font-size:12px;background:#132845;color:#f4efe2;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;}'
     + '@media print{ .fn-print-btn{display:none;} body{margin:0;max-width:none;} @page{size:A4;margin:16mm 14mm;} }'
     + '</style></head><body>'
-    + '<button class="fn-print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>'
+    + '<button class="fn-print-btn" onclick="window.print()">' + igIconSpan('🖨') + ' 인쇄 / PDF 저장</button>'
     + '<div class="fn-hero"><div class="eyebrow">IT AUDIT · 감사결과 통보서</div><h1>' + escFd(finding.title) + '</h1></div>'
     + '<div class="fn-body">'
       + '<div class="fn-row"><b>통보일자</b><span>' + today + '</span></div>'

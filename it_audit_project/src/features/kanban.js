@@ -16,6 +16,16 @@ import { collectAuditWideStats } from './collect.js';
 import { igItemMeta } from './interview.js';
 import { logReportGenerated } from './report.js';
 
+// [v8.60 버그수정] .kb-list-note-toggle/.gen-small-btn/.pr-print-btn 등이 'IBM Plex Mono'
+// 또는 generic monospace 폰트를 쓰는데, 이 폰트엔 이모지 글리프가 없어서 폐쇄망 PC에서
+// 컬러 이모지 폰트를 못 받아오면 브라우저가 엉뚱한 기호로 대체해 아이콘이 깨져 보이는 문제가
+// 있었다. 이모지 문자만 별도 span으로 감싸 OS 내장 이모지·기호 전용 폰트로 렌더링을 강제해
+// 해결(인터넷 연결·폰트 다운로드 불필요). interview.js에도 동일한 헬퍼가 있다(모듈 간
+// 공유는 아직 없음 — 각자 로컬로 최소 의존성 유지).
+function igIconSpan(ch){
+  return '<span style="font-family:\'Segoe UI Emoji\',\'Segoe UI Symbol\',\'Noto Color Emoji\',\'Apple Color Emoji\',\'Malgun Gothic\',sans-serif;">' + ch + '</span>';
+}
+
 export const KANBAN_STORAGE_KEY = 'itaudit_kanban_v1';
 
 export const KANBAN_ARCHIVE_STORAGE_KEY = 'itaudit_kanban_archive_v1';
@@ -354,7 +364,7 @@ export function renderKanbanListHtml(cards){
       + '<div class="kb-step-track">' + steps + '</div>'
       + '<div class="kb-list-actions">'
         + '<select class="kb-status-select" onchange="kanbanSetStatus(\''+c.id+'\', this.value)" style="font-size:10px;border:1px solid var(--line);border-radius:3px;padding:3px 5px;">'+statusOptionsHtml(c.status)+'</select>'
-        + '<button class="kb-list-note-toggle" onclick="kanbanToggleListNote(this)">💬 메모/이력</button>'
+        + '<button class="kb-list-note-toggle" onclick="kanbanToggleListNote(this)">' + igIconSpan('💬') + ' 메모/이력</button>'
         + '<button class="kb-list-note-toggle kb-del" onclick="kanbanDeleteCard(\''+c.id+'\')">삭제</button>'
       + '</div>'
       + '<div class="kb-list-note-panel">'
@@ -447,8 +457,8 @@ export function kanbanShowImportPreview(){
       + '<b style="color:var(--risk-hi);">전체 덮어쓰기</b>하면: 현재 내 보드의 카드 '+existing.length+'개가 모두 사라지고 이 파일의 카드 '+incoming.length+'개로 완전히 교체됩니다.'
     + '</div>'
     + '<div style="display:flex;gap:10px;flex-wrap:wrap;">'
-      + '<button class="gen-small-btn" style="margin:0;background:var(--navy-2);color:#fff;" onclick="kanbanConfirmImport(\'merge\')">✅ 이대로 병합 (안전)</button>'
-      + '<button class="gen-small-btn" style="margin:0;background:var(--risk-hi);color:#fff;" onclick="kanbanConfirmImport(\'overwrite\')">🗑 전체 덮어쓰기 (주의)</button>'
+      + '<button class="gen-small-btn" style="margin:0;background:var(--navy-2);color:#fff;" onclick="kanbanConfirmImport(\'merge\')">' + igIconSpan('✅') + ' 이대로 병합 (안전)</button>'
+      + '<button class="gen-small-btn" style="margin:0;background:var(--risk-hi);color:#fff;" onclick="kanbanConfirmImport(\'overwrite\')">' + igIconSpan('🗑') + ' 전체 덮어쓰기 (주의)</button>'
       + '<button class="gen-small-btn" style="margin:0;" onclick="kanbanCancelImport()">취소</button>'
     + '</div>';
 }
@@ -748,7 +758,7 @@ export function buildKanbanProgressReportHtml(){
     + '.pr-print-btn{margin:16px 0;font-family:monospace;font-size:12px;background:#132845;color:#f4efe2;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;}'
     + '@media print{ .pr-print-btn{display:none;} body{margin:0;max-width:none;} @page{size:A4;margin:14mm 12mm;} }'
     + '</style></head><body>'
-    + '<button class="pr-print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>'
+    + '<button class="pr-print-btn" onclick="window.print()">' + igIconSpan('🖨') + ' 인쇄 / PDF 저장</button>'
     + '<div class="pr-hero"><div class="eyebrow">IT AUDIT · PROGRESS INFOGRAPHIC</div><h1>📊 감사 진척도 리포트</h1><div class="sub">' + esc10(auditName) + ' · 작성일 ' + today + ' (KST) · 활성 ' + active.length + '건 + 보관 ' + archived.length + '건 = 총 ' + totalAll + '건</div>'
       + '<div class="pr-gauge"><div class="num">' + overallPct + '%</div><div class="track"><div class="fill" style="width:' + overallPct + '%;"></div></div></div>'
     + '</div>'
