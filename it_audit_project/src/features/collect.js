@@ -685,7 +685,7 @@ export function buildDeptAggReviewHtml(stats, esc4){
         if(it.sr) metaBits.push('자체평가: <b>' + esc4(it.sr) + '</b>');
         if(it.ownPerson) metaBits.push('관련 담당자: <b>' + esc4(it.ownPerson) + '</b>');
         return '<div class="rv-item' + (it.hasBad ? ' rv-bad' : '') + '">'
-          + '<div class="rv-item-head"><span class="rv-item-code">' + esc4(it.code) + '</span><span class="rv-item-title">' + esc4(it.title) + '</span><span class="rv-badge">위험도 ' + esc4(it.risk) + '</span></div>'
+          + '<div class="rv-item-head"><span class="rv-item-code">' + esc4(it.code) + '</span><span class="rv-item-title' + (it.hasBad ? ' has-bad' : '') + '">' + esc4(it.title) + '</span><span class="rv-badge">위험도 ' + esc4(it.risk) + '</span></div>'
           + (metaBits.length ? ('<div class="rv-meta-row">' + metaBits.join(' · ') + '</div>') : '')
           + cpHtml
           + (it.note ? ('<div class="rv-note-block">📝 비고: ' + esc4(it.note) + '</div>') : '')
@@ -794,7 +794,7 @@ export function buildDeptAggSummaryHtml(deptValue){
       return '<tr' + isCommon + ' data-code="' + esc4(b.code) + '" data-risk="' + esc4(b.risk) + '" data-dept="' + esc4(b.dept) + '" data-domain="' + esc4(b.code.split('-')[0]) + '">'
         + '<td class="mono" style="white-space:nowrap;">' + esc4(b.code) + ' <span class="risk-chip risk-' + esc4(b.risk) + '">' + esc4(b.risk) + '</span>' + commonBadge + '</td>'
         + (stats.deptOrder.length > 1 ? ('<td style="white-space:nowrap;">' + esc4(b.dept) + '</td>') : '')
-        + '<td>' + esc4(b.title) + '</td><td>' + esc4(b.cptext) + '</td></tr>';
+        + '<td style="font-weight:700;background:#fff5f3;">' + esc4(b.title) + '</td><td>' + esc4(b.cptext) + '</td></tr>';
     }).join('');
 
   const evidenceItems = stats.itemOrder.map(k => stats.itemMap[k]).filter(it => it.evidence);
@@ -830,7 +830,7 @@ export function buildDeptAggSummaryHtml(deptValue){
     + '.hero h1{margin:0 0 12px;font-size:28px;font-weight:600;line-height:1.3;}'
     + '.hero .meta{font-size:13px;color:#d8e0eb;line-height:1.7;margin:0;}'
     + '.body{padding:32px 40px;}'
-    + '.filter-panel{background:#faf9f5;border:1px solid #e8dfd0;border-radius:4px;padding:18px;margin:0 0 28px;display:block;}'
+    + '.filter-panel{position:sticky;top:0;z-index:999;background:#faf9f5;border:1px solid #e8dfd0;border-radius:4px;padding:18px;margin:0 0 28px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.05);}'
     + '.filter-panel.hide{display:none;}'
     + '.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;align-items:end;}'
     + '.filter-group{display:flex;flex-direction:column;gap:5px;}'
@@ -887,6 +887,7 @@ export function buildDeptAggSummaryHtml(deptValue){
     + '.rv-item-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}'
     + '.rv-item-code{font-family:\'Courier New\',monospace;font-size:11px;color:#666;font-weight:600;}'
     + '.rv-item-title{font-weight:700;font-size:13px;color:#2a2a2a;flex:1;}'
+    + '.rv-item-title.has-bad{background:#fff5f3;color:#c85a4a;padding:4px 8px;border-radius:3px;font-weight:800;}'
     + '.rv-badge{font-size:10px;font-family:\'Courier New\',monospace;padding:2px 7px;border-radius:2px;background:#f5f3ed;color:#666;white-space:nowrap;}'
     + '.rv-skip{font-size:12px;color:#c85a4a;background:#fdecea;border-radius:4px;padding:7px 10px;line-height:1.5;}'
     + '.rv-cp-list{margin:6px 0 0;padding:0 0 0 16px;list-style:none;}'
@@ -931,10 +932,15 @@ export function buildDeptAggSummaryHtml(deptValue){
           + '</div>'
         + '</div>'
         + '<div class="stat-grid">'
-          + '<div class="stat-card"><div class="num" id="totalCpStat">' + total + '</div><div class="lbl">전체 응답 체크포인트</div></div>'
-          + '<div class="stat-card"><div class="num" id="implRateStat">' + implRate + '%</div><div class="lbl">이행률<br>(양호+보통 비중)</div></div>'
-          + '<div class="stat-card' + (hiBadCount > 0 ? ' warn' : '') + '"><div class="num" id="hiBadStat">' + hiBadCount + '</div><div class="lbl">위험도 "상" 중<br>미흡 응답</div></div>'
-          + '<div class="stat-card"><div class="num" id="ownerOtherStat">' + stats.ownerOtherCount + '</div><div class="lbl">타 부서 담당 ·<br>공동 담당 표시</div></div>'
+          + '<div class="stat-card"><div class="num" id="totalCpStat">' + total + '</div><div class="lbl">전체 응답<br>체크포인트</div></div>'
+          + '<div class="stat-card" style="background:#e5f2ea;"><div class="num" id="goodCpStat" style="color:#2a7a4a;">' + T.good + '</div><div class="lbl">양호(이행)<br>' + (total > 0 ? Math.round(T.good/total*100) : 0) + '%</div></div>'
+          + '<div class="stat-card" style="background:#f7edd9;"><div class="num" id="neutralCpStat" style="color:#b8863b;">' + T.neutral + '</div><div class="lbl">보통(부분이행)<br>' + (total > 0 ? Math.round(T.neutral/total*100) : 0) + '%</div></div>'
+          + '<div class="stat-card warn" style="background:#f5d9d5;"><div class="num" id="badCpStat" style="color:#c85a4a;">' + T.bad + '</div><div class="lbl">미흡(개선필요)<br>' + (total > 0 ? Math.round(T.bad/total*100) : 0) + '%</div></div>'
+          + '<div class="stat-card"><div class="num" id="implRateStat">' + implRate + '%</div><div class="lbl">이행률<br>(양호+보통)</div></div>'
+          + '<div class="stat-card" style="background:#f0eae0;"><div class="num" id="naCpStat" style="color:#666;">' + T.na + '</div><div class="lbl">해당없음<br>' + (total > 0 ? Math.round(T.na/total*100) : 0) + '%</div></div>'
+          + '<div class="stat-card warn" style="background:#fff5f3;"><div class="num" id="hiBadStat" style="color:#c85a4a;">' + hiBadCount + '</div><div class="lbl">위험도 "상"중<br>미흡 응답</div></div>'
+          + '<div class="stat-card"><div class="num" id="badItemStat">' + stats.badItems.length + '</div><div class="lbl">미흡 항목<br>수</div></div>'
+          + '<div class="stat-card"><div class="num" id="ownerOtherStat">' + stats.ownerOtherCount + '</div><div class="lbl">타 부서 담당 ·<br>공동 담당</div></div>'
         + '</div>'
         + '<h2 class="sec">전체 응답 분포</h2>'
         + '<div class="donut-row"><div class="donut"><div class="donut-center"><b id="implRateDonut">' + implRate + '%</b><span>이행률</span></div></div>'
@@ -996,9 +1002,15 @@ export function buildDeptAggSummaryHtml(deptValue){
           + 'const deptMatch=!dept||b.dept===dept;const riskMatch=!risk||b.risk===risk;const domainMatch=!domain||b.code.split("-")[0]===domain;'
           + 'return deptMatch&&riskMatch&&domainMatch&&b.risk==="상";'
         + '}).length;'
+        + 'const filteredBadItems=visibleBad;'
         + 'document.getElementById("totalCpStat").innerText=filteredTotal;'
+        + 'document.getElementById("goodCpStat").innerText=filteredGood;'
+        + 'document.getElementById("neutralCpStat").innerText=filteredNeutral;'
+        + 'document.getElementById("badCpStat").innerText=filteredBad;'
+        + 'document.getElementById("naCpStat").innerText=filteredNa;'
         + 'document.getElementById("implRateStat").innerText=filteredImplRate+"%";'
         + 'document.getElementById("hiBadStat").innerText=filteredHiBad;'
+        + 'document.getElementById("badItemStat").innerText=filteredBadItems;'
         + 'document.getElementById("badCountSpan").innerText=visibleBad;document.getElementById("evidenceCountSpan").innerText=visibleEvidence;'
       + '}'
       + 'function exportToCSV(){'
