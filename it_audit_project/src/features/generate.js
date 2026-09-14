@@ -545,6 +545,7 @@ export function renderDsearchResults(){
 }
 
 export function renderDomainAuditorAssign(){
+  // [v8.62] 설문지 생성 후에도 배정 감사자를 언제든지 변경할 수 있음
   const wrap = document.getElementById('domainAuditorAssignWrap');
   if(!wrap) return;
   const selected = DOMAINS.filter(d => selectedCodes.has(d.code));
@@ -554,7 +555,7 @@ export function renderDomainAuditorAssign(){
   }
   // 더 이상 선택되지 않은 도메인의 배정은 정리
   Object.keys(domainAuditorMap).forEach(code => { if(!selectedCodes.has(code)) delete domainAuditorMap[code]; });
-  wrap.innerHTML = '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:8px;">한 영역에 여러 명을 함께 배정하려면 <b>쉼표(,)로 구분</b>해서 입력하세요. (예: 김감사, 이감사)</div>'
+  wrap.innerHTML = '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:8px;"><b>🔧 배정 감사자 수정</b> — 설문지 생성 후에도 여기서 언제든지 변경 가능합니다. 한 영역에 여러 명을 함께 배정하려면 <b>쉼표(,)로 구분</b>해서 입력하세요. (예: 김감사, 이감사)</div>'
     + '<table class="assign-tbl"><tr><th style="width:200px;">영역</th><th>담당 감사자 (쉼표로 여러 명 가능)</th></tr>'
     + selected.map(d =>
         '<tr><td>D-' + d.code + ' ' + esc(d.title) + '</td>'

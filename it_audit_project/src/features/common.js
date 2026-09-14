@@ -260,8 +260,29 @@ export function setCurrentAuditor(name){
   addKnownAuditor(name);
 }
 
+// [v8.62] 감사자 이름 정규화 — 괄호 안의 부서명/설명 제거
+export function normalizeAuditorName(fullName){
+  if(!fullName) return '';
+  const str = String(fullName).trim();
+  // "김병훈(IT자체감사자)" → "김병훈"
+  return str.replace(/\([^)]*\)/g, '').trim();
+}
+
 export function loadKnownAuditors(){
-  try{ return JSON.parse(localStorage.getItem(AUDITOR_LIST_STORAGE_KEY) || '[]'); }catch(e){ return []; }
+  try{
+    const list = JSON.parse(localStorage.getItem(AUDITOR_LIST_STORAGE_KEY) || '[]');
+    // [v8.62] 동일 기본이름 중복 제거 — 정규화된 이름으로 판단해 첫 번째 형태만 유지
+    const seen = new Set();
+    const deduped = [];
+    list.forEach(n => {
+      const normalized = normalizeAuditorName(n);
+      if(!seen.has(normalized)){
+        seen.add(normalized);
+        deduped.push(n);
+      }
+    });
+    return deduped;
+  }catch(e){ return []; }
 }
 
 export function addKnownAuditor(name){

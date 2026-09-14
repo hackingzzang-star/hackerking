@@ -1244,6 +1244,10 @@ export function renderAggregation(){
   document.getElementById('interviewTargetsTableWrap').style.display = hasData ? 'block' : 'none';
   document.getElementById('ownerPersonsTableWrap').style.display = hasData ? 'block' : 'none';
   document.getElementById('interviewScheduleWrap').style.display = hasData ? 'block' : 'none';
+  // [v8.62] 응답 집계 단계에서 감사자를 선택 후 지정 — 아래 "🎤 인터뷰 일정 관리" 표의
+  // "👥 배정 감사자" 칸에서 각 대상자별로 담당 감사역을 배정할 수 있음.
+  // 상단 "배정 감사자 선택" 드롭다운에서 한 명을 선택하면 그 감사자 몫만
+  // "📦 이 감사자 몫 내보내기"로 JSON 파일로 만들어 배정할 수 있음.
   if(hasData){ try{ renderInterviewScheduleTable(getFilteredAggRows()); }catch(e){ console.error('인터뷰 일정 표 렌더링 오류(다른 응답집계 표에는 영향 없음):', e); } }
   document.getElementById('aggSrSummary').style.display = hasData ? 'grid' : 'none';
   document.getElementById('aggOwnSummary').style.display = hasData ? 'grid' : 'none';

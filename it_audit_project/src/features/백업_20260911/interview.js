@@ -97,23 +97,6 @@ function igIconSpan(ch){
   return '<span style="font-family:\'Segoe UI Emoji\',\'Segoe UI Symbol\',\'Noto Color Emoji\',\'Apple Color Emoji\',\'Malgun Gothic\',sans-serif;">' + ch + '</span>';
 }
 
-// [v8.60 후속 수정] 이모지는 고쳤지만 이 툴바(.ig-toolbar-*, .ig-dl-btn, .ig-mode-btn)의
-// 글자 크기(9.5~11.5px)와 여백(상하 패딩 2~6px)이 index.html의 CSS에서 원래 빡빡하게
-// 잡혀 있어서, 아이콘이 여러 개 붙어 있으면 여전히 찌부러진 느낌이 났다. index.html은
-// 건드리지 않기로 했으므로, 이 영역(#ig-toolbar-wrap)에만 적용되는 <style> 블록을
-// innerHTML로 직접 주입해 이 툴바의 글자 크기·여백만 살짝 키운다(다른 탭·다른 영역에는
-// 전혀 영향 없음 — #ig-toolbar-wrap 안쪽 클래스만 선택자로 지정했기 때문).
-const IG_TOOLBAR_SIZE_FIX_CSS = '<style>'
-  + '#ig-toolbar-wrap .ig-toolbar-panel{padding:10px 14px;}'
-  + '#ig-toolbar-wrap .ig-toolbar-group{padding:8px 12px 10px;}'
-  + '#ig-toolbar-wrap .ig-toolbar-group-title{font-size:11px;}'
-  + '#ig-toolbar-wrap .ig-toolbar-label{font-size:11.5px;padding:4px 10px;}'
-  + '#ig-toolbar-wrap .ig-stat{font-size:12.5px;}'
-  + '#ig-toolbar-wrap .ig-dl-btn{font-size:12px;padding:8px 13px;}'
-  + '#ig-toolbar-wrap .ig-mode-btn{font-size:12.5px;padding:8px 15px;}'
-  + '#ig-toolbar-wrap .ig-toolbar-row{padding:11px 0;gap:10px;}'
-  + '</style>';
-
 export function renderIppfFlow(stats){
   const el = document.getElementById('ippfFlow');
   if(!el) return;
@@ -649,18 +632,7 @@ export function renderInterviewScheduleTable(fRows){
     const prevAp = apSel.value;
     const scheduleAuditors = Object.values(interviewSchedule).map(s => (s.assignedAuditor||'').trim()).filter(Boolean);
     const knownAuditors = (typeof loadKnownAuditors === 'function') ? loadKnownAuditors() : [];
-    // [v8.62] 정규화 후 중복 제거 — "김병훈(IT자체감사자)"와 "김병훈(자체감사자)" 같은 표기 변형 제거
-    const normalize = (name) => String(name).replace(/\([^)]*\)/g, '').trim();
-    const seen = new Set();
-    const auditors = [];
-    [...scheduleAuditors, ...knownAuditors].forEach(name => {
-      const normalized = normalize(name);
-      if(!seen.has(normalized)){
-        seen.add(normalized);
-        auditors.push(name);
-      }
-    });
-    auditors.sort();
+    const auditors = Array.from(new Set([...scheduleAuditors, ...knownAuditors])).sort();
     apSel.innerHTML = '<option value="">— 배정 감사자 선택 —</option>' + auditors.map(a => '<option value="' + esc(a) + '">' + esc(a) + '</option>').join('');
     if(auditors.includes(prevAp)) apSel.value = prevAp;
     const apHintEl = document.getElementById('apAuditorSelectHint');
@@ -2353,7 +2325,7 @@ export function renderInterviewGuide(){
   if(!container) return;
   renderIgSourceBanner();
 
-  const modeToggleHtml = IG_TOOLBAR_SIZE_FIX_CSS + '<div class="ig-mode-toggle">'
+  const modeToggleHtml = '<div class="ig-mode-toggle">'
     + '<button class="ig-mode-btn' + (igViewMode==='data'?' active':'') + '" data-mode="data">📊 응답 데이터 기준</button>'
     + '<button class="ig-mode-btn' + (igViewMode==='all'?' active':'') + '" data-mode="all">📋 전체 항목 검토·편집(응답 무관)</button>'
     + '<button type="button" id="igManualRefreshBtn" class="ig-mode-btn" style="margin-left:auto;" title="① 설문지 생성 탭에서 체크리스트를 새로 업로드/변경한 뒤에도 이 화면이 그대로면 눌러주세요 — 지금 등록된 체크리스트 기준으로 다시 그립니다.">🔄 체크리스트 최신 반영</button>'
