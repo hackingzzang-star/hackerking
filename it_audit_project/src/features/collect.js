@@ -650,7 +650,8 @@ export function collectDeptAggStats(deptValue){
   });
   itemOrder.forEach(key => { const g = itemMap[key]; byDept[g.dept][key] = g; });
 
-  return {tierCounts, byDomain, domainOrder, byDept, deptOrder, badItems, ownerOtherCount, totalCp: rows.length, itemMap, itemOrder};
+  const checkpoints = rows.map(r => ({code:r.code, domain:r.domain, dept:r.dept||'(부서명 미입력)', tier:r.tier, risk:r.risk}));
+  return {tierCounts, byDomain, domainOrder, byDept, deptOrder, badItems, ownerOtherCount, totalCp: rows.length, itemMap, itemOrder, checkpoints};
 }
 
 export function buildDeptAggReviewHtml(stats, esc4){
@@ -820,6 +821,10 @@ export function buildDeptAggSummaryHtml(deptValue){
     + '*{box-sizing:border-box;}'
     + 'body{font-family:\'Malgun Gothic\',\'맑은 고딕\',\'Noto Sans KR\',sans-serif;margin:0;background:#f7f5f0;color:#2a2a2a;line-height:1.6;font-size:13px;}'
     + '.wrap{max-width:1080px;margin:16px auto;background:#fff;border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;}'
+    + '.zoom-controls{position:fixed;top:16px;left:16px;display:flex;gap:8px;z-index:1000;background:#fff;border:1px solid #ddd;border-radius:3px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);}'
+    + '.zoom-btn{padding:6px 12px;background:#1f4e6f;color:#fff;border:none;border-radius:2px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;}'
+    + '.zoom-btn:hover{background:#2a5f7f;}'
+    + '.zoom-display{padding:6px 12px;font-size:12px;font-family:\'Courier New\',monospace;color:#666;min-width:50px;text-align:center;border:1px solid #e8dfd0;border-radius:2px;background:#f5f3ed;}'
     + '.hero{background:linear-gradient(135deg,#1f4e6f 0%,#2a5f7f 100%);color:#f8f6f1;padding:32px 40px;}'
     + '.hero .eyebrow{font-family:\'Courier New\',monospace;font-size:10px;letter-spacing:.12em;color:#d4af37;text-transform:uppercase;margin:0 0 6px;font-weight:600;}'
     + '.hero h1{margin:0 0 12px;font-size:28px;font-weight:600;line-height:1.3;}'
@@ -899,17 +904,23 @@ export function buildDeptAggSummaryHtml(deptValue){
     + '.print-btn.filter-toggle-btn{right:252px;background:#5a4a7a;}'
     + '.print-btn.export-btn{right:370px;background:#6a7a8a;}'
     + 'p{margin:0 0 14px;line-height:1.7;color:#2a2a2a;}'
-    + '@media print{.print-btn{display:none;}.filter-panel{display:none;}.wrap{box-shadow:none;margin:0;max-width:none;border-radius:0;}.body{padding:16px 24px;}.hero{padding:20px 24px;}}'
+    + '@media print{.print-btn{display:none;}.zoom-controls{display:none;}.filter-panel{display:none;}.wrap{box-shadow:none;margin:0;max-width:none;border-radius:0;}.body{padding:16px 24px;}.hero{padding:20px 24px;}}'
     + '</style></head><body>'
-    + '<button class="print-btn filter-toggle-btn no-print" onclick="toggleFilterPanel()">🔍 필터</button>'
-    + '<button class="print-btn export-btn no-print" onclick="exportToCSV()">💾 CSV</button>'
-    + '<button class="print-btn save-btn no-print" onclick="itAuditSaveHtml()">HTML로 저장</button>'
-    + '<button class="print-btn no-print" onclick="window.print()">인쇄 / PDF</button>'
+    + '<div class="zoom-controls">'
+      + '<button class="zoom-btn" onclick="zoomOut()">−</button>'
+      + '<div class="zoom-display" id="zoomDisplay">100%</div>'
+      + '<button class="zoom-btn" onclick="zoomReset()">초기화</button>'
+      + '<button class="zoom-btn" onclick="zoomIn()">+</button>'
+    + '</div>'
+    + '<button class="print-btn filter-toggle-btn" onclick="toggleFilterPanel()">🔍 필터</button>'
+    + '<button class="print-btn export-btn" onclick="exportToCSV()">💾 CSV</button>'
+    + '<button class="print-btn save-btn" onclick="itAuditSaveHtml()">HTML로 저장</button>'
+    + '<button class="print-btn" onclick="window.print()">인쇄 / PDF</button>'
     + '<div class="wrap">'
       + '<div class="hero"><div class="eyebrow">IT AUDIT · AGGREGATED RESPONSE SUMMARY</div><h1>📊 설문 응답 요약</h1>'
         + '<div class="meta">수검부서: <b>' + esc4(deptLabel) + '</b> · 생성일시: ' + nowStr + '</div></div>'
       + '<div class="body">'
-        + '<div class="filter-panel no-print" id="filterPanel">'
+        + '<div class="filter-panel" id="filterPanel">'
           + '<div class="filter-row">'
             + '<div class="filter-group"><label>검색</label><input type="text" id="searchInput" placeholder="항목명, 체크포인트 검색" onkeyup="applyFilters()"></div>'
             + '<div class="filter-group"><label>부서</label><select id="deptFilter" onchange="applyFilters()">' + deptOptions + '</select></div>'
@@ -941,6 +952,13 @@ export function buildDeptAggSummaryHtml(deptValue){
       + '<div class="footer">생성일시: ' + nowStr + ' · A4 인쇄에 최적화 · [v8.63] 필터/검색/정렬 기능 추가</div>'
     + '</div>'
     + '<script>'
+      + 'const statsData = ' + JSON.stringify({
+        tierCounts: stats.tierCounts,
+        totalCp: stats.totalCp,
+        badItems: stats.badItems,
+        checkpoints: stats.checkpoints,
+        deptOrder: stats.deptOrder
+      }) + ';'
       + 'const allBadRows = document.querySelectorAll("#badTableBody tr");'
       + 'const allEvidenceRows = document.querySelectorAll("#evidenceTableBody tr");'
       + 'function toggleFilterPanel(){document.getElementById("filterPanel").classList.toggle("hide");}'
@@ -966,6 +984,21 @@ export function buildDeptAggSummaryHtml(deptValue){
           + 'const match=matchSearch&&matchDept&&matchDomain;'
           + 'row.style.display=match?"":"none";if(match)visibleEvidence++;'
         + '});'
+        + 'const filteredCps=statsData.checkpoints.filter(cp=>{'
+          + 'const deptMatch=!dept||cp.dept===dept;const riskMatch=!risk||cp.risk===risk;const domainMatch=!domain||cp.domain===domain;'
+          + 'return deptMatch&&riskMatch&&domainMatch;'
+        + '});'
+        + 'let filteredGood=0,filteredNeutral=0,filteredBad=0,filteredNa=0;'
+        + 'filteredCps.forEach(cp=>{if(cp.tier==="good")filteredGood++;else if(cp.tier==="neutral")filteredNeutral++;else if(cp.tier==="bad")filteredBad++;else if(cp.tier==="na")filteredNa++;});'
+        + 'const filteredTotal=filteredCps.length;'
+        + 'const filteredImplRate=filteredTotal>0?Math.round((filteredGood+filteredNeutral)/filteredTotal*100):0;'
+        + 'const filteredHiBad=statsData.badItems.filter(b=>{'
+          + 'const deptMatch=!dept||b.dept===dept;const riskMatch=!risk||b.risk===risk;const domainMatch=!domain||b.code.split("-")[0]===domain;'
+          + 'return deptMatch&&riskMatch&&domainMatch&&b.risk==="상";'
+        + '}).length;'
+        + 'document.getElementById("totalCpStat").innerText=filteredTotal;'
+        + 'document.getElementById("implRateStat").innerText=filteredImplRate+"%";'
+        + 'document.getElementById("hiBadStat").innerText=filteredHiBad;'
         + 'document.getElementById("badCountSpan").innerText=visibleBad;document.getElementById("evidenceCountSpan").innerText=visibleEvidence;'
       + '}'
       + 'function exportToCSV(){'
@@ -974,6 +1007,12 @@ export function buildDeptAggSummaryHtml(deptValue){
         + 'const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="응답요약_"+(new Date().toISOString().split("T")[0])+".csv";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);'
       + '}'
       + 'function itAuditSaveHtml(){var c=document.documentElement.cloneNode(true);var bs=c.querySelectorAll(".no-print");for(var i=0;i<bs.length;i++){bs[i].remove();}var html="<!DOCTYPE html>"+c.outerHTML;var blob=new Blob([html],{type:"text/html;charset=utf-8;"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=(document.title||"summary").replace(/[\\/:*?"<>|]/g,"")+".html";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}'
+      + 'let currentZoom=100;'
+      + 'function zoomIn(){currentZoom=Math.min(currentZoom+10,200);updateZoom();}'
+      + 'function zoomOut(){currentZoom=Math.max(currentZoom-10,50);updateZoom();}'
+      + 'function zoomReset(){currentZoom=100;updateZoom();}'
+      + 'function updateZoom(){document.body.style.zoom=currentZoom+"%";document.getElementById("zoomDisplay").innerText=currentZoom+"%";localStorage.setItem("itaudit_zoom",currentZoom);}'
+      + 'document.addEventListener("DOMContentLoaded",function(){var saved=localStorage.getItem("itaudit_zoom");if(saved){currentZoom=parseInt(saved);updateZoom();}});'
     + '</script>'
     + '</body></html>';
 }
