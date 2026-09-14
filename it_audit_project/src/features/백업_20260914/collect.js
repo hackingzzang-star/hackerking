@@ -702,9 +702,6 @@ export function buildDeptAggReviewHtml(stats, esc4){
   }).join('');
 }
 
-// [v8.63] buildDeptAggSummaryHtml() - 부서전달용 HTML 필터 기능 완전 개편
-// 기능: 필터(부서/위험도/영역/상태), 검색, 정렬, 통계 갱신, 부서 요약 카드, 응답자 표시, 공통약점 강조
-
 export function buildDeptAggSummaryHtml(deptValue){
   const stats = collectDeptAggStats(deptValue);
   const esc4 = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -714,17 +711,6 @@ export function buildDeptAggSummaryHtml(deptValue){
   const implRate = total > 0 ? Math.round((T.good + T.neutral) / total * 100) : 0;
   const hiBadCount = stats.badItems.filter(b => b.risk === '상').length;
   const nowStr = new Date(Date.now() + 9*3600000).toISOString().slice(0,16).replace('T',' ') + ' (KST)';
-
-  // [v8.63] 공통 약점 영역 계산 — 2개 이상 부서가 미흡한 항목
-  const commonWeaknesses = new Set();
-  const itemDeptMap = {};
-  stats.badItems.forEach(b => {
-    if(!itemDeptMap[b.code]) itemDeptMap[b.code] = new Set();
-    itemDeptMap[b.code].add(b.dept);
-  });
-  Object.keys(itemDeptMap).forEach(code => {
-    if(itemDeptMap[code].size >= 2) commonWeaknesses.add(code);
-  });
 
   const order = [['good','#2e7d5b'], ['neutral','#b8863b'], ['bad','#a23b2e'], ['na','#9aa3b0']];
   let acc = 0;
@@ -758,206 +744,109 @@ export function buildDeptAggSummaryHtml(deptValue){
       + '</div>';
     }).join('');
 
-  // [v8.63] 부서별 요약 카드 — stats.byDept[dept]의 각 항목 checkpoints 순회하여 tier 집계
-  const deptSummaryCards = stats.deptOrder.length > 1 ? (
-    '<h2 class="sec">🏢 부서별 응답 현황</h2>'
-    + '<div class="dept-cards-grid">'
-    + stats.deptOrder.map(dept => {
-      const deptItemsMap = stats.byDept[dept] || {};
-      let deptGoodCp = 0, deptBadCp = 0, deptNeutralCp = 0, deptTotalCp = 0;
-      Object.values(deptItemsMap).forEach(item => {
-        if(item.checkpoints && Array.isArray(item.checkpoints)){
-          item.checkpoints.forEach(cp => {
-            deptTotalCp++;
-            if(cp.tier === 'good') deptGoodCp++;
-            else if(cp.tier === 'bad') deptBadCp++;
-            else if(cp.tier === 'neutral') deptNeutralCp++;
-          });
-        }
-      });
-      const deptImplRate = deptTotalCp > 0 ? Math.round((deptGoodCp + deptNeutralCp) / deptTotalCp * 100) : 0;
-      return '<div class="dept-card">'
-        + '<div class="dept-name">' + esc4(dept) + '</div>'
-        + '<div class="dept-stats"><span class="rate">' + deptImplRate + '%</span><span class="label">이행률</span></div>'
-        + '<div class="dept-bad"><span class="num">' + deptBadCp + '</span><span class="label">미흡</span></div>'
-        + '</div>';
-    }).join('')
-    + '</div>'
-  ) : '';
-
   const badTableRows = stats.badItems.length === 0
-    ? '<tr><td colspan="5" style="padding:14px;color:#5a6472;text-align:center;">개선 필요(미흡) 응답이 없습니다.</td></tr>'
-    : stats.badItems.slice().sort((a,b) => (a.risk==='상'?0:a.risk==='중'?1:2) - (b.risk==='상'?0:b.risk==='중'?1:2)).map(b => {
-      const isCommon = commonWeaknesses.has(b.code) ? ' class="common-weakness"' : '';
-      const commonBadge = commonWeaknesses.has(b.code) ? ' <span class="common-badge">🔴 공통약점</span>' : '';
-      return '<tr' + isCommon + ' data-code="' + esc4(b.code) + '" data-risk="' + esc4(b.risk) + '" data-dept="' + esc4(b.dept) + '" data-domain="' + esc4(b.code.split('-')[0]) + '">'
-        + '<td class="mono" style="white-space:nowrap;">' + esc4(b.code) + ' <span class="risk-chip risk-' + esc4(b.risk) + '">' + esc4(b.risk) + '</span>' + commonBadge + '</td>'
+    ? '<tr><td colspan="4" style="padding:14px;color:#5a6472;text-align:center;">개선 필요(미흡) 응답이 없습니다.</td></tr>'
+    : stats.badItems.slice().sort((a,b) => (a.risk==='상'?0:a.risk==='중'?1:2) - (b.risk==='상'?0:b.risk==='중'?1:2)).map(b =>
+        '<tr><td class="mono" style="white-space:nowrap;">' + esc4(b.code) + ' <span class="risk-chip risk-' + esc4(b.risk) + '">' + esc4(b.risk) + '</span></td>'
         + (stats.deptOrder.length > 1 ? ('<td style="white-space:nowrap;">' + esc4(b.dept) + '</td>') : '')
-        + '<td>' + esc4(b.title) + '</td><td>' + esc4(b.cptext) + '</td></tr>';
-    }).join('');
+        + '<td>' + esc4(b.title) + '</td><td>' + esc4(b.cptext) + '</td></tr>'
+      ).join('');
 
   const evidenceItems = stats.itemOrder.map(k => stats.itemMap[k]).filter(it => it.evidence);
   const evidenceListRows = evidenceItems.length === 0
     ? '<tr><td colspan="4" style="padding:14px;color:#5a6472;text-align:center;">제출 예정으로 체크된 증빙자료가 없습니다.</td></tr>'
     : evidenceItems.map(it =>
-        '<tr data-code="' + esc4(it.code) + '" data-dept="' + esc4(it.dept) + '" data-domain="' + esc4(it.code.split('-')[0]) + '">'
-        + '<td class="mono" style="white-space:nowrap;">' + esc4(it.code) + '</td>'
+        '<tr><td class="mono" style="white-space:nowrap;">' + esc4(it.code) + '</td>'
         + (stats.deptOrder.length > 1 ? ('<td style="white-space:nowrap;">' + esc4(it.dept) + '</td>') : '')
         + '<td>' + esc4(it.title) + '</td><td>' + esc4(it.evidence) + '</td></tr>'
       ).join('');
 
-  // [v8.63] 부서 목록 (필터용)
-  const deptOptions = '<option value="">전체</option>' + stats.deptOrder.map(d => '<option value="' + esc4(d) + '">' + esc4(d) + '</option>').join('');
-  
-  // [v8.63] 영역 목록 (필터용)
-  const domainOptions = '<option value="">전체</option>' + stats.domainOrder.map(d => {
-    const dom = stats.byDomain[d];
-    return '<option value="' + esc4(d) + '">D-' + esc4(d) + ' ' + esc4(dom.title) + '</option>';
-  }).join('');
-
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>설문 응답 요약 — ' + esc4(deptLabel) + '</title><style>'
     + '@page{size:A4;margin:14mm;}'
     + '*{box-sizing:border-box;}'
-    + 'body{font-family:\'Malgun Gothic\',\'맑은 고딕\',\'Noto Sans KR\',sans-serif;margin:0;background:#f5f3ed;color:#222;line-height:1.5;}'
-    + '.wrap{max-width:1100px;margin:20px auto;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.08);}'
-    + '.hero{background:#1a3a52;color:#f8f5f0;padding:24px 32px;}'
-    + '.hero .eyebrow{font-family:\'Courier New\',monospace;font-size:10px;letter-spacing:.08em;color:#d4af37;text-transform:uppercase;margin-bottom:2px;}'
-    + '.hero h1{margin:4px 0 8px;font-size:26px;font-weight:600;line-height:1.3;}'
-    + '.hero .meta{font-size:12px;color:#d0d8e0;line-height:1.6;}'
-    + '.body{padding:24px 32px 28px;}'
-    + '.filter-panel{background:#faf8f3;border:1px solid #e5dfd0;border-radius:6px;padding:16px;margin-bottom:24px;display:block;}'
-    + '.filter-panel.hide{display:none;}'
-    + '.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end;margin-bottom:4px;}'
-    + '.filter-group{display:flex;flex-direction:column;gap:4px;}'
-    + '.filter-group label{font-size:11px;color:#666;text-transform:uppercase;font-weight:600;letter-spacing:.05em;}'
-    + '.filter-group select,.filter-group input{padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px;font-family:inherit;background:#fff;color:#222;}'
-    + '.filter-group input::placeholder{color:#999;}'
-    + '.filter-btn{padding:8px 14px;background:#1a3a52;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;transition:background .2s;}'
-    + '.filter-btn:hover{background:#243f54;}'
-    + '.common-weakness{background:#fffbf9;}'
-    + '.common-badge{background:#fbe4e0;color:#c85a4a;padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;margin-left:4px;}'
-    + '.dept-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:24px;}'
-    + '.dept-card{background:#f8f5f0;border:1px solid #e0d9cc;border-radius:5px;padding:14px;text-align:center;transition:box-shadow .2s;}'
-    + '.dept-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}'
-    + '.dept-name{font-size:12px;font-weight:600;color:#1a3a52;margin-bottom:10px;word-break:break-word;line-height:1.4;}'
-    + '.dept-stats{display:flex;justify-content:center;gap:8px;align-items:center;margin-bottom:10px;}'
-    + '.dept-stats .rate{font-size:20px;font-weight:700;color:#2d7a4a;font-family:\'Courier New\',monospace;}'
-    + '.dept-stats .label{font-size:11px;color:#666;}'
-    + '.dept-bad{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:#c85a4a;}'
-    + '.dept-bad .num{font-size:18px;font-weight:700;font-family:\'Courier New\',monospace;}'
-    + '.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;}'
-    + '.stat-card{border:1px solid #e5dfd0;border-radius:6px;padding:14px;text-align:center;background:#faf8f3;}'
-    + '.stat-card .num{font-family:\'Courier New\',monospace;font-size:28px;font-weight:700;color:#1a3a52;line-height:1.2;}'
-    + '.stat-card .lbl{font-size:11px;color:#666;margin-top:6px;line-height:1.4;}'
-    + '.stat-card.warn .num{color:#c85a4a;}'
-    + 'h2.sec{font-size:15px;color:#1a3a52;border-left:4px solid #d4af37;padding-left:12px;margin:28px 0 16px;font-weight:600;}'
-    + 'h2.sec.dept-sec{font-size:16px;border-left-color:#1a3a52;background:#f0ebe1;padding:10px 12px;margin:32px 0 16px;border-radius:4px;page-break-before:always;border-left-width:3px;}'
-    + '.donut-row{display:flex;align-items:center;gap:32px;margin-bottom:12px;}'
-    + '.donut{width:140px;height:140px;border-radius:50%;flex:none;position:relative;' + donutStyle + '}'
-    + '.donut::after{content:"";position:absolute;inset:28px;background:#fff;border-radius:50%;}'
+    + 'body{font-family:\'Pretendard\',\'Noto Sans KR\',sans-serif;margin:0;background:#efece2;color:#1b2330;}'
+    + '.wrap{max-width:1100px;margin:24px auto;background:#fff;box-shadow:0 8px 30px rgba(19,40,69,.18);}'
+    + '.hero{background:#132845;color:#f4efe2;padding:28px 34px;}'
+    + '.hero .eyebrow{font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.1em;color:#e4c78a;text-transform:uppercase;}'
+    + '.hero h1{margin:6px 0 10px;font-size:24px;}'
+    + '.hero .meta{font-size:12.5px;color:#c9d2e2;line-height:1.8;}'
+    + '.body{padding:26px 34px 34px;}'
+    + '.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px;}'
+    + '.stat-card{border:1px solid #dcd6c8;border-radius:8px;padding:14px 12px;text-align:center;}'
+    + '.stat-card .num{font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;color:#132845;}'
+    + '.stat-card .lbl{font-size:11px;color:#5a6472;margin-top:4px;line-height:1.5;}'
+    + '.stat-card.warn .num{color:#a23b2e;}'
+    + 'h2.sec{font-size:14px;color:#132845;border-left:4px solid #b8863b;padding-left:10px;margin:26px 0 14px;}'
+    + 'h2.sec.dept-sec{font-size:16px;border-left-color:#132845;background:#f1ede1;padding:8px 10px;margin:28px 0 14px;border-radius:4px;page-break-before:always;}'
+    + '.donut-row{display:flex;align-items:center;gap:30px;margin-bottom:8px;}'
+    + '.donut{width:150px;height:150px;border-radius:50%;flex:none;position:relative;' + donutStyle + '}'
+    + '.donut::after{content:"";position:absolute;inset:24px;background:#fff;border-radius:50%;}'
     + '.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}'
-    + '.donut-center b{font-family:\'Courier New\',monospace;font-size:24px;color:#1a3a52;font-weight:700;}'
-    + '.donut-center span{font-size:11px;color:#666;}'
+    + '.donut-center b{font-family:\'IBM Plex Mono\',monospace;font-size:22px;color:#132845;}'
+    + '.donut-center span{font-size:10px;color:#5a6472;}'
     + '.legend{flex:1;}'
-    + '.legend-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12px;border-bottom:1px dashed #f0eae0;}'
-    + '.legend-dot{width:12px;height:12px;border-radius:50%;flex:none;}'
-    + '.legend-label{flex:1;color:#222;}'
-    + '.legend-val{font-family:\'Courier New\',monospace;color:#666;font-size:11px;}'
-    + '.dom-row{display:grid;grid-template-columns:140px 1fr 100px;align-items:center;gap:12px;padding:8px 0;font-size:12px;border-bottom:1px solid #f5f3ed;}'
-    + '.dom-row:last-child{border-bottom:none;}'
-    + '.dom-label{color:#222;font-weight:500;}'
-    + '.dom-bar-track{height:16px;background:#f0eae0;border-radius:3px;overflow:hidden;white-space:nowrap;}'
-    + '.dom-count{font-family:\'Courier New\',monospace;font-size:11px;color:#666;text-align:right;}'
-    + 'table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px;background:#fff;}'
-    + 'th,td{padding:10px 11px;border-bottom:1px solid #e8e2d5;text-align:left;color:#222;}'
-    + 'th{background:#f0ebe1;font-size:10px;color:#666;text-transform:uppercase;font-weight:600;letter-spacing:.05em;}'
-    + 'tr:hover{background:#fffbf9;}'
-    + '.risk-chip{font-family:\'Courier New\',monospace;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:700;white-space:nowrap;}'
-    + '.risk-상{background:#fce4e0;color:#c85a4a;} .risk-중{background:#fef5e8;color:#b8863b;} .risk-하{background:#e5f2ea;color:#2d7a4a;}'
-    + '.footer{padding:18px 32px;font-size:11px;color:#999;border-top:1px solid #e8e2d5;line-height:1.6;}'
-    + '.print-btn{position:fixed;top:14px;right:14px;background:#1a3a52;color:#fff;border:none;border-radius:4px;padding:8px 14px;font-size:12px;cursor:pointer;z-index:1000;transition:background .2s;}'
-    + '.print-btn:hover{background:#243f54;}'
-    + '.print-btn.save-btn{right:140px;background:#5a6472;}'
-    + '.print-btn.filter-toggle-btn{right:270px;background:#5a4a7a;}'
-    + '.print-btn.export-btn{right:400px;background:#6a7a8a;}'
-    + 'p{margin:0 0 12px;line-height:1.6;}'
-    + '@media print{.print-btn{display:none;}.filter-panel{display:none;margin-bottom:0;}.wrap{box-shadow:none;margin:0;max-width:none;}.body{padding:16px 24px;}body{background:#fff;}}'
+    + '.legend-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;border-bottom:1px dashed #e5e1d4;}'
+    + '.legend-dot{width:11px;height:11px;border-radius:50%;flex:none;}'
+    + '.legend-label{flex:1;}'
+    + '.legend-val{font-family:\'IBM Plex Mono\',monospace;color:#5a6472;}'
+    + '.dom-row{display:grid;grid-template-columns:150px 1fr 110px;align-items:center;gap:10px;padding:6px 0;font-size:12px;}'
+    + '.dom-label{color:#1b2330;}'
+    + '.dom-bar-track{height:14px;background:#efece2;border-radius:3px;overflow:hidden;white-space:nowrap;}'
+    + '.dom-count{font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5a6472;text-align:right;}'
+    + 'table{width:100%;border-collapse:collapse;font-size:12px;}'
+    + 'th,td{padding:7px 9px;border-bottom:1px solid #ece7d9;text-align:left;}'
+    + 'th{background:#f1ede1;font-size:10px;color:#5a6472;text-transform:uppercase;}'
+    + '.risk-chip{font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;padding:1px 5px;border-radius:8px;font-weight:700;}'
+    + '.risk-상{background:#f7e6e2;color:#a23b2e;} .risk-중{background:#f7edd9;color:#b8863b;} .risk-하{background:#e5f2ea;color:#2e7d5b;}'
+    + '.footer{padding:16px 34px;font-size:10.5px;color:#8a92a0;border-top:1px solid #ece7d9;}'
+    + '.rv-domain-head{font-size:13px;font-weight:700;color:#132845;background:#f1ede1;padding:8px 12px;margin:22px 0 10px;border-radius:4px;}'
+    + '.rv-item{border:1px solid #dcd6c8;border-radius:6px;padding:10px 14px;margin-bottom:10px;break-inside:avoid;page-break-inside:avoid;}'
+    + '.rv-item.rv-bad{border-left:4px solid #a23b2e;}'
+    + '.rv-item-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;}'
+    + '.rv-item-code{font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5a6472;}'
+    + '.rv-item-title{font-weight:700;font-size:13px;color:#1b2330;flex:1;}'
+    + '.rv-badge{font-size:10px;font-family:\'IBM Plex Mono\',monospace;padding:2px 7px;border-radius:9px;background:#eef0f6;color:#463b8a;white-space:nowrap;}'
+    + '.rv-skip{font-size:11.5px;color:#a23b2e;background:#fdecea;border-radius:4px;padding:6px 9px;}'
+    + '.rv-cp-list{margin:4px 0 0;padding:0;list-style:none;}'
+    + '.rv-cp-list li{display:flex;gap:8px;align-items:flex-start;font-size:11.8px;padding:3px 0;border-top:1px dashed #ece7d9;}'
+    + '.rv-cp-list li:first-child{border-top:none;}'
+    + '.rv-cp-badge{flex:none;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;white-space:nowrap;}'
+    + '.rv-cp-badge.good{background:#e5f2ea;color:#2e7d5b;} .rv-cp-badge.neutral{background:#f7edd9;color:#b8863b;} .rv-cp-badge.bad{background:#f7e6e2;color:#a23b2e;} .rv-cp-badge.na{background:#eee;color:#5a6472;} .rv-cp-badge.blank{background:#f2f2f2;color:#aaa;}'
+    + '.rv-meta-row{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11.3px;color:#5a6472;margin-top:6px;}'
+    + '.rv-meta-row b{color:#1b2330;}'
+    + '.rv-note-block{font-size:11.5px;color:#1b2330;background:#faf8f0;border-radius:4px;padding:6px 9px;margin-top:6px;line-height:1.6;}'
+    + '.print-btn{position:fixed;top:16px;right:16px;background:#132845;color:#f4efe2;border:none;border-radius:6px;padding:9px 16px;font-size:12.5px;cursor:pointer;}'
+    + '.print-btn.save-btn{right:150px;background:#4a5a72;}'
+    + '@media print{.print-btn{display:none;}body{background:#fff;}.wrap{box-shadow:none;margin:0;max-width:none;}}'
     + '</style></head><body>'
-    + '<button class="print-btn filter-toggle-btn no-print" onclick="toggleFilterPanel()">🔍 필터</button>'
-    + '<button class="print-btn export-btn no-print" onclick="exportToCSV()">💾 CSV</button>'
+    + '<button class="print-btn no-print" onclick="window.print()">인쇄 / PDF 저장</button>'
     + '<button class="print-btn save-btn no-print" onclick="itAuditSaveHtml()">HTML로 저장</button>'
-    + '<button class="print-btn no-print" onclick="window.print()">인쇄 / PDF</button>'
     + '<div class="wrap">'
       + '<div class="hero"><div class="eyebrow">IT AUDIT · AGGREGATED RESPONSE SUMMARY</div><h1>📊 설문 응답 요약</h1>'
         + '<div class="meta">수검부서: <b>' + esc4(deptLabel) + '</b> · 생성일시: ' + nowStr + '</div></div>'
       + '<div class="body">'
-        + '<div class="filter-panel no-print" id="filterPanel">'
-          + '<div class="filter-row">'
-            + '<div class="filter-group"><label>검색</label><input type="text" id="searchInput" placeholder="항목명, 체크포인트 검색" onkeyup="applyFilters()"></div>'
-            + '<div class="filter-group"><label>부서</label><select id="deptFilter" onchange="applyFilters()">' + deptOptions + '</select></div>'
-            + '<div class="filter-group"><label>위험도</label><select id="riskFilter" onchange="applyFilters()"><option value="">전체</option><option value="상">상</option><option value="중">중</option><option value="하">하</option></select></div>'
-            + '<div class="filter-group"><label>영역</label><select id="domainFilter" onchange="applyFilters()">' + domainOptions + '</select></div>'
-            + '<div class="filter-group"><label>상태</label><select id="statusFilter" onchange="applyFilters()"><option value="">전체</option><option value="bad">미흡만</option><option value="good">양호만</option></select></div>'
-            + '<div class="filter-group"><button class="filter-btn" onclick="resetFilters()">초기화</button></div>'
-          + '</div>'
-        + '</div>'
         + '<div class="stat-grid">'
-          + '<div class="stat-card"><div class="num" id="totalCpStat">' + total + '</div><div class="lbl">전체 응답 체크포인트</div></div>'
-          + '<div class="stat-card"><div class="num" id="implRateStat">' + implRate + '%</div><div class="lbl">이행률<br>(양호+보통 비중)</div></div>'
-          + '<div class="stat-card' + (hiBadCount > 0 ? ' warn' : '') + '"><div class="num" id="hiBadStat">' + hiBadCount + '</div><div class="lbl">위험도 "상" 중<br>미흡 응답</div></div>'
-          + '<div class="stat-card"><div class="num" id="ownerOtherStat">' + stats.ownerOtherCount + '</div><div class="lbl">타 부서 담당 ·<br>공동 담당 표시</div></div>'
+          + '<div class="stat-card"><div class="num">' + total + '</div><div class="lbl">전체 응답 체크포인트</div></div>'
+          + '<div class="stat-card"><div class="num">' + implRate + '%</div><div class="lbl">이행률<br>(양호+보통 비중)</div></div>'
+          + '<div class="stat-card' + (hiBadCount > 0 ? ' warn' : '') + '"><div class="num">' + hiBadCount + '</div><div class="lbl">위험도 "상" 중<br>미흡 응답</div></div>'
+          + '<div class="stat-card"><div class="num">' + stats.ownerOtherCount + '</div><div class="lbl">타 부서 담당 ·<br>공동 담당 표시</div></div>'
         + '</div>'
         + '<h2 class="sec">전체 응답 분포</h2>'
-        + '<div class="donut-row"><div class="donut"><div class="donut-center"><b id="implRateDonut">' + implRate + '%</b><span>이행률</span></div></div>'
+        + '<div class="donut-row"><div class="donut"><div class="donut-center"><b>' + implRate + '%</b><span>이행률</span></div></div>'
           + '<div class="legend">' + legendHtml + '</div></div>'
         + (stats.domainOrder.length > 1 ? ('<h2 class="sec">영역별 이행 현황 (미흡 비율 높은 순)</h2><div class="dom-list">' + domainRows + '</div>') : '')
-        + deptSummaryCards
-        + '<h2 class="sec">🚩 개선 필요(미흡) 응답 — <span id="badCountSpan">' + stats.badItems.length + '</span>건</h2>'
-        + '<table><tr><th>항목코드/위험도</th>' + (stats.deptOrder.length > 1 ? '<th>응답부서</th>' : '') + '<th>항목명</th><th>체크포인트</th></tr><tbody id="badTableBody">' + badTableRows + '</tbody></table>'
-        + '<h2 class="sec">📎 제출 예정 증빙자료 목록 — <span id="evidenceCountSpan">' + evidenceItems.length + '</span>건</h2>'
-        + '<table><tr><th>항목코드</th>' + (stats.deptOrder.length > 1 ? '<th>응답부서</th>' : '') + '<th>항목명</th><th>제출 예정 증빙자료</th></tr><tbody id="evidenceTableBody">' + evidenceListRows + '</tbody></table>'
-        + '<h2 class="sec" style="page-break-before:always;">📋 전체 항목 리뷰</h2>'
+        + '<h2 class="sec">🚩 개선 필요(미흡) 응답 — ' + stats.badItems.length + '건</h2>'
+        + '<table><tr><th>항목코드/위험도</th>' + (stats.deptOrder.length > 1 ? '<th>응답부서</th>' : '') + '<th>항목명</th><th>체크포인트</th></tr>' + badTableRows + '</table>'
+        + '<h2 class="sec">📎 제출 예정 증빙자료 목록 — ' + evidenceItems.length + '건</h2>'
+        + '<table><tr><th>항목코드</th>' + (stats.deptOrder.length > 1 ? '<th>응답부서</th>' : '') + '<th>항목명</th><th>제출 예정 증빙자료</th></tr>' + evidenceListRows + '</table>'
+        + '<h2 class="sec" style="page-break-before:always;">📋 전체 항목 리뷰 (제출 전·전달 전 마지막 확인용)</h2>'
         + '<p style="font-size:11.5px;color:#5a6472;margin:0 0 14px;line-height:1.6;">아래는 이 요약에 포함된 모든 항목의 담당여부·체크포인트 응답·비고·자체평가·증빙을 그대로 모은 목록입니다.</p>'
         + buildDeptAggReviewHtml(stats, esc4)
       + '</div>'
-      + '<div class="footer">생성일시: ' + nowStr + ' · A4 인쇄에 최적화 · [v8.63] 필터/검색/정렬 기능 추가</div>'
+      + '<div class="footer">생성일시: ' + nowStr + ' · 이 문서는 ③ 응답집계 화면에서 감사역이 만든 요약본이며, 해당 부서에 전달용으로 사용할 수 있습니다. · A4 인쇄에 최적화되어 있습니다.</div>'
     + '</div>'
-    + '<script>'
-      + 'const allBadRows = document.querySelectorAll("#badTableBody tr");'
-      + 'const allEvidenceRows = document.querySelectorAll("#evidenceTableBody tr");'
-      + 'function toggleFilterPanel(){document.getElementById("filterPanel").classList.toggle("hide");}'
-      + 'function resetFilters(){document.getElementById("searchInput").value="";document.getElementById("deptFilter").value="";document.getElementById("riskFilter").value="";document.getElementById("domainFilter").value="";document.getElementById("statusFilter").value="";applyFilters();}'
-      + 'function applyFilters(){'
-        + 'const search=document.getElementById("searchInput").value.toLowerCase();'
-        + 'const dept=document.getElementById("deptFilter").value;'
-        + 'const risk=document.getElementById("riskFilter").value;'
-        + 'const domain=document.getElementById("domainFilter").value;'
-        + 'const status=document.getElementById("statusFilter").value;'
-        + 'let visibleBad=0,visibleEvidence=0;'
-        + 'allBadRows.forEach(row=>{'
-          + 'const code=row.dataset.code||"";const rowDept=row.dataset.dept||"";const rowRisk=row.dataset.risk||"";const rowDomain=row.dataset.domain||"";'
-          + 'const text=row.innerText.toLowerCase();'
-          + 'const matchSearch=!search||text.includes(search);const matchDept=!dept||rowDept===dept;const matchRisk=!risk||rowRisk===risk;const matchDomain=!domain||rowDomain===domain;'
-          + 'const match=matchSearch&&matchDept&&matchRisk&&matchDomain&&(!status||status==="bad");'
-          + 'row.style.display=match?"":"none";if(match)visibleBad++;'
-        + '});'
-        + 'allEvidenceRows.forEach(row=>{'
-          + 'const rowDept=row.dataset.dept||"";const rowDomain=row.dataset.domain||"";'
-          + 'const text=row.innerText.toLowerCase();'
-          + 'const matchSearch=!search||text.includes(search);const matchDept=!dept||rowDept===dept;const matchDomain=!domain||rowDomain===domain;'
-          + 'const match=matchSearch&&matchDept&&matchDomain;'
-          + 'row.style.display=match?"":"none";if(match)visibleEvidence++;'
-        + '});'
-        + 'document.getElementById("badCountSpan").innerText=visibleBad;document.getElementById("evidenceCountSpan").innerText=visibleEvidence;'
-      + '}'
-      + 'function exportToCSV(){'
-        + 'let csv="항목코드,위험도,부서,항목명,체크포인트\\n";'
-        + 'allBadRows.forEach(row=>{if(row.style.display!=="none"){const cells=row.querySelectorAll("td");let line="";for(let i=0;i<cells.length;i++){let text=cells[i].innerText.replace(/"/g,"\\\"");line+=(i>0?",":"")+"\\""+text+"\\"";} csv+=line+"\\n";}});'
-        + 'const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="응답요약_"+(new Date().toISOString().split("T")[0])+".csv";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);'
-      + '}'
-      + 'function itAuditSaveHtml(){var c=document.documentElement.cloneNode(true);var bs=c.querySelectorAll(".no-print");for(var i=0;i<bs.length;i++){bs[i].remove();}var html="<!DOCTYPE html>"+c.outerHTML;var blob=new Blob([html],{type:"text/html;charset=utf-8;"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=(document.title||"summary").replace(/[\\/:*?"<>|]/g,"")+".html";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}'
-    + '</script>'
-    + '</body></html>';
+    + '<script>function itAuditSaveHtml(){var c=document.documentElement.cloneNode(true);var bs=c.querySelectorAll(".no-print");for(var i=0;i<bs.length;i++){bs[i].remove();}var html="<!DOCTYPE html>"+c.outerHTML;var blob=new Blob([html],{type:"text/html;charset=utf-8;"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=(document.title||"summary").replace(/[\\/:*?"<>|]/g,"")+".html";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}</script>'
+  + '</body></html>';
 }
 
 export function exportDeptAggSummary(){
@@ -1355,6 +1244,10 @@ export function renderAggregation(){
   document.getElementById('interviewTargetsTableWrap').style.display = hasData ? 'block' : 'none';
   document.getElementById('ownerPersonsTableWrap').style.display = hasData ? 'block' : 'none';
   document.getElementById('interviewScheduleWrap').style.display = hasData ? 'block' : 'none';
+  // [v8.62] 응답 집계 단계에서 감사자를 선택 후 지정 — 아래 "🎤 인터뷰 일정 관리" 표의
+  // "👥 배정 감사자" 칸에서 각 대상자별로 담당 감사역을 배정할 수 있음.
+  // 상단 "배정 감사자 선택" 드롭다운에서 한 명을 선택하면 그 감사자 몫만
+  // "📦 이 감사자 몫 내보내기"로 JSON 파일로 만들어 배정할 수 있음.
   if(hasData){ try{ renderInterviewScheduleTable(getFilteredAggRows()); }catch(e){ console.error('인터뷰 일정 표 렌더링 오류(다른 응답집계 표에는 영향 없음):', e); } }
   document.getElementById('aggSrSummary').style.display = hasData ? 'grid' : 'none';
   document.getElementById('aggOwnSummary').style.display = hasData ? 'grid' : 'none';
