@@ -1108,6 +1108,7 @@ export function buildActionPlanRequestHtml(deptValue){
       + '<div class="item-body">'
         + (it.srNote ? ('<div class="field"><div class="flab">자체점검 결과(자체평가 근거)</div><div class="fval">' + esc5(it.srNote) + '</div></div>') : '')
         + (it.note ? ('<div class="field"><div class="flab">비고</div><div class="fval">' + esc5(it.note) + '</div></div>') : '')
+        + (it.evidence ? ('<div class="field"><div class="flab">제출 예정 증빙자료(자체 제출안)</div><div class="fval">' + esc5(it.evidence) + '</div></div>') : '')
         + '<div class="field full"><div class="flab">체크포인트별 판정</div>' + cpHtml + '</div>'
       + '</div>'
       + '<div class="req-block">'
@@ -1227,6 +1228,125 @@ export function exportActionPlanRequest(){
   const blob = new Blob([html], {type:'text/html;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank', 'width=1180,height=1000');
+}
+
+
+// ============================================================
+// 📄 미흡사항 조치계획 요청서 — MS Word용 (.doc) 내보내기
+// 내부망(폐쇄망)에서 외부 라이브러리 없이 동작해야 하므로, docx 포맷 대신
+// "MS Word가 직접 여는 HTML"(mso 워드프로세싱 문서) 방식을 쓴다. 표(<table>) 기반으로만
+// 구성해야 워드 렌더러가 레이아웃을 안정적으로 재현한다(flex/grid/box-shadow 등은
+// 워드 HTML 렌더러가 지원하지 않으므로 화면용 buildActionPlanRequestHtml()과는
+// 완전히 별도의 마크업을 쓴다). 항목별 "원인분석/개선계획/완료예정일/담당자/서명"
+// 칸은 빈 표 셀로 두어, 받는 부서가 워드에서 셀 안을 바로 타이핑해 채울 수 있게 한다.
+// ============================================================
+
+export function buildActionPlanRequestDocHtml(deptValue){
+  const stats = collectDeptAggStats(deptValue);
+  const esc6 = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const nowStr = new Date(Date.now() + 9*3600000).toISOString().slice(0,10);
+  const auditName = (typeof getCurrentAuditName === 'function') ? (getCurrentAuditName() || '') : '';
+  const dueDateEl = document.getElementById('genDueDate');
+  const dueDate = (dueDateEl && (dueDateEl.value || '').trim()) || '(미지정)';
+
+  const badItemsByDept = {};
+  stats.deptOrder.forEach(d => { badItemsByDept[d] = []; });
+  stats.itemOrder.forEach(k => {
+    const it = stats.itemMap[k];
+    if(it.hasBad) (badItemsByDept[it.dept] || (badItemsByDept[it.dept] = [])).push(it);
+  });
+  const deptOrderWithBad = stats.deptOrder.filter(d => (badItemsByDept[d]||[]).length > 0);
+  const totalBad = deptOrderWithBad.reduce((n,d) => n + badItemsByDept[d].length, 0);
+  const deptLabel = deptValue || ('전체 (' + stats.deptOrder.length + '개 부서)');
+
+  const TIER_LABEL = {good:'[양호] 이행', neutral:'[부분이행]', bad:'[미흡]', na:'[해당없음]', blank:'[미응답]'};
+
+  const cellStyle = "border:1px solid #999999;padding:6px 8px;font-size:10pt;vertical-align:top;";
+  const labelCellStyle = cellStyle + "background:#f0efe9;font-weight:bold;white-space:nowrap;width:110px;";
+  const blankCellStyle = cellStyle + "height:56px;";
+  const halfBlankCellStyle = cellStyle + "height:46px;width:50%;";
+
+  function itemTableHtml(it){
+    const cpText = it.checkpoints.map(cp => (TIER_LABEL[cp.tier || 'blank'] || TIER_LABEL.blank) + ' ' + esc6(cp.cptext)).join('<br>');
+    return '<table style="width:100%;border-collapse:collapse;margin:0 0 4pt;" cellspacing="0" cellpadding="0">'
+      + '<tr>'
+        + '<td style="' + labelCellStyle + '">항목코드</td>'
+        + '<td style="' + cellStyle + '" colspan="2"><b>' + esc6(it.code) + '</b> &nbsp; ' + esc6(it.title) + '</td>'
+        + '<td style="' + labelCellStyle + 'width:70px;">위험도</td>'
+        + '<td style="' + cellStyle + 'width:60px;text-align:center;"><b>' + esc6(it.risk) + '</b></td>'
+      + '</tr>'
+      + '<tr><td style="' + labelCellStyle + '">체크포인트별<br>판정</td><td style="' + cellStyle + '" colspan="4">' + cpText + '</td></tr>'
+      + (it.srNote ? ('<tr><td style="' + labelCellStyle + '">자체점검 결과<br>(자체평가 근거)</td><td style="' + cellStyle + '" colspan="4">' + esc6(it.srNote) + '</td></tr>') : '')
+      + (it.note ? ('<tr><td style="' + labelCellStyle + '">비고</td><td style="' + cellStyle + '" colspan="4">' + esc6(it.note) + '</td></tr>') : '')
+      + (it.evidence ? ('<tr><td style="' + labelCellStyle + '">제출 예정<br>증빙자료</td><td style="' + cellStyle + '" colspan="4">' + esc6(it.evidence) + '</td></tr>') : '')
+      + '<tr><td style="' + labelCellStyle + 'background:#eef5f3;">원인분석</td><td style="' + blankCellStyle + '" colspan="4">&nbsp;</td></tr>'
+      + '<tr><td style="' + labelCellStyle + 'background:#eef5f3;">개선(조치)계획</td><td style="' + blankCellStyle + '" colspan="4">&nbsp;</td></tr>'
+      + '<tr>'
+        + '<td style="' + labelCellStyle + 'background:#eef5f3;">완료예정일</td><td style="' + halfBlankCellStyle + '" colspan="2">&nbsp;</td>'
+        + '<td style="' + labelCellStyle + 'background:#eef5f3;width:90px;">담당자/연락처</td><td style="' + halfBlankCellStyle + '">&nbsp;</td>'
+      + '</tr>'
+      + '<tr>'
+        + '<td style="' + labelCellStyle + 'background:#eef5f3;">작성자</td><td style="' + halfBlankCellStyle + '" colspan="2">&nbsp;</td>'
+        + '<td style="' + labelCellStyle + 'background:#eef5f3;width:90px;">부서장 확인</td><td style="' + halfBlankCellStyle + '">&nbsp;</td>'
+      + '</tr>'
+    + '</table>';
+  }
+
+  const deptSectionsHtml = deptOrderWithBad.map((d, di) => {
+    const pageBreak = di > 0 ? 'page-break-before:always;' : '';
+    return '<div style="' + pageBreak + '">'
+      + '<h2 style="font-size:13pt;color:#1f4e6f;border-left:4pt solid #1f4e6f;background:#f5f3ed;padding:6pt 10pt;margin:0 0 10pt;">'
+        + esc6(d) + ' — 미흡 ' + badItemsByDept[d].length + '건</h2>'
+      + badItemsByDept[d].map(it => itemTableHtml(it) + '<div style="height:14pt;">&nbsp;</div>').join('')
+    + '</div>';
+  }).join('');
+
+  return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>"
+    + "<head><meta charset='utf-8'><title>미흡사항 조치계획 요청서</title>"
+    + "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom>"
+    + "<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->"
+    + "<style>"
+      + "@page Section1 {size:210mm 297mm; margin:20mm 18mm 20mm 18mm; mso-page-orientation:portrait;}"
+      + "div.Section1 {page:Section1;}"
+      + "body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:10pt;color:#222222;}"
+      + "table{border-collapse:collapse;}"
+    + "</style></head>"
+    + "<body><div class='Section1'>"
+      + "<h1 style=\"font-size:18pt;color:#1f4e6f;text-align:center;margin:0 0 4pt;\">미흡사항 조치계획 요청서</h1>"
+      + "<p style=\"text-align:center;font-size:9.5pt;color:#666666;margin:0 0 18pt;\">IT 내부감사 · 응답집계 결과 기반</p>"
+      + "<table style=\"width:100%;border-collapse:collapse;margin:0 0 18pt;\">"
+        + "<tr><td style=\"" + labelCellStyle + "\">감사명</td><td style=\"" + cellStyle + "\">" + esc6(auditName || '(감사명 미입력)') + "</td>"
+          + "<td style=\"" + labelCellStyle + "\">생성일</td><td style=\"" + cellStyle + "\">" + nowStr + "</td></tr>"
+        + "<tr><td style=\"" + labelCellStyle + "\">대상부서</td><td style=\"" + cellStyle + "\">" + esc6(deptLabel) + "</td>"
+          + "<td style=\"" + labelCellStyle + "\">회신기한</td><td style=\"" + cellStyle + "color:#a23b2e;font-weight:bold;\">" + esc6(dueDate) + "</td></tr>"
+        + "<tr><td style=\"" + labelCellStyle + "\">미흡 건수</td><td style=\"" + cellStyle + "\" colspan=\"3\">총 " + totalBad + "건 (" + deptOrderWithBad.length + "개 부서)</td></tr>"
+      + "</table>"
+      + "<p style=\"font-size:9.5pt;color:#555555;background:#eeecf7;padding:8pt 10pt;line-height:1.6;\">"
+        + "각 항목의 <b>원인분석·개선(조치)계획·완료예정일·담당자</b>란을 워드 표 안에 직접 입력하신 뒤 결재·제출해 주시기 바랍니다."
+      + "</p>"
+      + deptSectionsHtml
+    + "</div></body></html>";
+}
+
+export function exportActionPlanRequestDoc(){
+  if(aggRows.length === 0){ alert('취합된 응답 데이터가 없습니다. 먼저 CSV/JSON을 업로드해 주세요.'); return; }
+  const sel = document.getElementById('aggDeptReportSelect');
+  const deptValue = sel ? sel.value : '';
+  if(deptValue && !aggRows.some(r => (r.dept||'(부서명 미입력)') === deptValue)){
+    alert('선택한 부서의 응답 데이터를 찾을 수 없습니다.');
+    return;
+  }
+  const stats = collectDeptAggStats(deptValue);
+  const hasBad = stats.itemOrder.some(k => stats.itemMap[k].hasBad);
+  if(!hasBad){ alert((deptValue ? deptValue + ' 부서에는' : '취합된 범위 내에') + ' 미흡(개선필요) 판정 항목이 없어 문서를 생성하지 않았습니다.'); return; }
+  const html = buildActionPlanRequestDocHtml(deptValue);
+  const blob = new Blob(['\ufeff', html], {type:'application/msword;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = '미흡사항_조치계획_요청서_' + (deptValue || '전체') + '_' + new Date(Date.now()+9*3600000).toISOString().slice(0,10) + '.doc';
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 
