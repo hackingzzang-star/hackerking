@@ -395,8 +395,8 @@ export function setDomains(v){ DOMAINS = v; }
 
 export const CIRCLED = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
 
-export const SYSTEM_VERSION = '8.62';
-const SYSTEM_BUILD_DATE = '2026-09-14';
+export const SYSTEM_VERSION = '8.64';
+const SYSTEM_BUILD_DATE = '2026-09-17';
 // [수정] 헤더 배지·하단 푸터·사용법 가이드의 버전 표시가 각각 따로 하드코딩되어 있어서,
 // 버전을 올릴 때 한 곳이라도 빠뜨리면 화면마다 다른 버전이 찍히는 문제가 반복돼 왔다(v6.28에서 한 번 고쳤다가 다시 발생).
 // 이제 이 두 상수(SYSTEM_VERSION/SYSTEM_BUILD_DATE)만 바꾸면 아래 4곳이 전부 자동으로 맞춰지도록 통일한다.

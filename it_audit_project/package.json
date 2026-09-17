@@ -1,6 +1,6 @@
 {
   "name": "it-audit-lifecycle-platform",
-  "version": "8.61.0",
+  "version": "8.64.0",
   "private": true,
   "description": "IT감사 라이프사이클 플랫폼 - 개발 소스(분리) → 빌드 시 단일 HTML 산출",
   "type": "module",
