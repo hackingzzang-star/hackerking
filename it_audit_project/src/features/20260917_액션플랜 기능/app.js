@@ -148,9 +148,6 @@ import {
   exportDeptAggSummary,
   buildActionPlanRequestHtml,
   exportActionPlanRequest,
-  buildActionPlanRequestDocHtml,
-  exportActionPlanRequestDoc,
-  exportActionPlanRequestDocAllDepts,
   collapseDetailRowAndScroll,
   toggleAggTargetDetail,
   itemLevelRows,
@@ -1704,10 +1701,6 @@ const aggDeptReportBtnEl = document.getElementById('aggDeptReportBtn');
 if(aggDeptReportBtnEl) aggDeptReportBtnEl.addEventListener('click', exportDeptAggSummary);
 const aggActionPlanBtnEl = document.getElementById('aggActionPlanBtn');
 if(aggActionPlanBtnEl) aggActionPlanBtnEl.addEventListener('click', exportActionPlanRequest);
-const aggActionPlanDocBtnEl = document.getElementById('aggActionPlanDocBtn');
-if(aggActionPlanDocBtnEl) aggActionPlanDocBtnEl.addEventListener('click', exportActionPlanRequestDoc);
-const aggActionPlanDocAllBtnEl = document.getElementById('aggActionPlanDocAllBtn');
-if(aggActionPlanDocAllBtnEl) aggActionPlanDocAllBtnEl.addEventListener('click', exportActionPlanRequestDocAllDepts);
 
 /* ---------- 배포계획 불러오기 (회수율 확인용) ---------- */
 export let coveragePlan = null;

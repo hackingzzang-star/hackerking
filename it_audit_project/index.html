@@ -1872,6 +1872,19 @@
           <button class="gen-small-btn" id="aggDeptReportBtn" style="margin:0;background:var(--teal);color:#fff;border-color:var(--teal);">📊 요약 HTML 내보내기 (새 창)</button>
         </div>
       </div>
+      <div class="round-panel" id="aggActionPlanPanel" style="margin-bottom:14px;border-left:4px solid var(--navy);">
+        <h4 style="margin:0 0 6px;font-size:13px;color:var(--navy);">📋 미흡사항 조치계획 요청서</h4>
+        <p style="font-size:11px;color:var(--ink-soft);margin:0 0 8px;line-height:1.6;">응답집계에서 🚩미흡으로 판정된 항목만 부서별로 추려, 자체점검 결과·체크포인트별 판정과 함께 <b>원인분석·개선(조치)계획·완료예정일·담당자</b>를 기재해 회신받는 문서입니다. 위 "전체/부서" 선택 드롭다운을 그대로 씁니다. HTML(인쇄·PDF용)과 Word(.doc, 표 안에 바로 타이핑해 작성) 두 형식으로 내보낼 수 있습니다.</p>
+        <p style="font-size:10.5px;color:var(--ink-soft);margin:0 0 8px;line-height:1.6;">💡 문서 안 "미흡 항목 수"는 <b>부서×항목코드 단위</b>로 셉니다(체크포인트 여러 개가 미흡이어도 항목 1개 = 카드 1장). 아래 "전체 미흡 응답 취합 목록"은 <b>체크포인트 단위</b>라 숫자가 다르게 보일 수 있는데, 정상입니다 — 이 문서 안에 "미흡 체크포인트 수"로 그 기준의 숫자도 함께 표기해 뒀습니다.</p>
+        <div class="round-controls" style="align-items:center;">
+          <select id="aggActionPlanDeptSelect" style="border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;min-width:180px;"><option value="">전체 (응답한 모든 부서 취합)</option></select>
+          <button class="gen-small-btn" id="aggActionPlanBtn" style="margin:0;background:var(--navy);color:#fff;border-color:var(--navy);">📄 조치계획 요청서 (HTML, 새 창)</button>
+          <button class="gen-small-btn" id="aggActionPlanDocBtn" style="margin:0;background:var(--indigo);color:#fff;border-color:var(--indigo);">📄 조치계획 요청서 (Word, 다운로드)</button>
+        </div>
+        <div class="round-controls" style="align-items:center;margin-top:8px;">
+          <button class="gen-small-btn" id="aggActionPlanDocAllBtn" style="margin:0;background:var(--risk-hi);color:#fff;border-color:var(--risk-hi);">📦 부서별로 개별 Word 파일 일괄 생성 (담당자에게 각각 전달용)</button>
+        </div>
+      </div>
       <div class="round-panel" id="aggUsageGuide" style="margin-bottom:14px;">
         <h4 style="margin:0 0 6px;font-size:13px;color:var(--navy);">🧭 이 화면 보는 순서</h4>
         <p style="font-size:11.5px;color:var(--ink-soft);margin:0;line-height:1.7;">
