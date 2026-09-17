@@ -146,6 +146,10 @@ import {
   buildDeptAggReviewHtml,
   buildDeptAggSummaryHtml,
   exportDeptAggSummary,
+  buildActionPlanRequestHtml,
+  exportActionPlanRequest,
+  buildActionPlanRequestDocHtml,
+  exportActionPlanRequestDoc,
   collapseDetailRowAndScroll,
   toggleAggTargetDetail,
   itemLevelRows,
@@ -1697,6 +1701,10 @@ if(aggFilterResetBtnEl) aggFilterResetBtnEl.addEventListener('click', () => {
 });
 const aggDeptReportBtnEl = document.getElementById('aggDeptReportBtn');
 if(aggDeptReportBtnEl) aggDeptReportBtnEl.addEventListener('click', exportDeptAggSummary);
+const aggActionPlanBtnEl = document.getElementById('aggActionPlanBtn');
+if(aggActionPlanBtnEl) aggActionPlanBtnEl.addEventListener('click', exportActionPlanRequest);
+const aggActionPlanDocBtnEl = document.getElementById('aggActionPlanDocBtn');
+if(aggActionPlanDocBtnEl) aggActionPlanDocBtnEl.addEventListener('click', exportActionPlanRequestDoc);
 
 /* ---------- 배포계획 불러오기 (회수율 확인용) ---------- */
 export let coveragePlan = null;
