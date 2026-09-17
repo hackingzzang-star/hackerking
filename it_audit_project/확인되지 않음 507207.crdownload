@@ -1,0 +1,102 @@
+@echo off
+setlocal enabledelayedexpansion
+cd /d "%~dp0"
+
+:MENU
+cls
+echo ============================================
+echo   Git 동기화 도구  (%cd%)
+echo ============================================
+echo.
+echo   1. 나갈 때   - 지금까지 작업 저장 + 업로드 (push)
+echo   2. 도착했을 때 - 최신 작업 받아오기 (pull)
+echo   3. 상태만 확인 (아무것도 안 바꿈)
+echo   0. 종료
+echo.
+set /p sel="번호 선택: "
+
+if "%sel%"=="1" goto PUSH
+if "%sel%"=="2" goto PULL
+if "%sel%"=="3" goto STATUS
+if "%sel%"=="0" exit
+goto MENU
+
+:PUSH
+echo.
+echo [1/3] 변경사항 확인 중...
+git status --porcelain > "%temp%\gs_check.txt"
+for %%A in ("%temp%\gs_check.txt") do set size=%%~zA
+if "%size%"=="0" (
+    echo 변경된 파일이 없습니다. 바로 push만 시도합니다.
+    goto DOPUSH
+)
+
+echo 변경된 파일:
+git status --short
+echo.
+set /p msg="커밋 메시지 입력 (엔터=자동 시간기록): "
+if "%msg%"=="" set msg=sync: %date% %time%
+
+echo.
+echo [2/3] 커밋 중...
+git add -A
+git commit -m "%msg%"
+
+:DOPUSH
+echo.
+echo [3/3] 원격 저장소로 업로드 중...
+git push
+echo.
+echo ============================================
+echo   완료! 이제 다른 PC에서 옵션 2로 받으세요.
+echo ============================================
+pause
+goto MENU
+
+:PULL
+echo.
+echo [1/2] 로컬에 커밋 안 된 변경사항 확인 중...
+git status --porcelain > "%temp%\gs_check.txt"
+for %%A in ("%temp%\gs_check.txt") do set size=%%~zA
+if not "%size%"=="0" (
+    echo.
+    echo   [경고] 이 PC에 커밋되지 않은 변경사항이 있습니다:
+    git status --short
+    echo.
+    echo   받아오기 전에 처리해야 합니다.
+    echo   1. 지금 이 변경사항도 커밋하고 진행
+    echo   2. 임시 보관(stash)만 하고 진행 (나중에 git stash pop으로 복원)
+    echo   3. 취소하고 메뉴로 돌아가기
+    set /p sub="선택: "
+    if "!sub!"=="1" (
+        set /p msg2="커밋 메시지: "
+        if "!msg2!"=="" set msg2=local: %date% %time%
+        git add -A
+        git commit -m "!msg2!"
+    )
+    if "!sub!"=="2" (
+        git stash
+        echo stash 완료. pull 이후 필요하면 git stash pop 을 직접 실행하세요.
+    )
+    if "!sub!"=="3" goto MENU
+)
+
+echo.
+echo [2/2] 최신 내용 받아오는 중...
+git pull
+echo.
+echo ============================================
+echo   완료! git log -1 --stat 으로 확인해보세요.
+echo ============================================
+pause
+goto MENU
+
+:STATUS
+echo.
+git status
+echo.
+echo --- 최근 커밋 5개 ---
+git log --oneline -5
+echo.
+pause
+goto MENU
