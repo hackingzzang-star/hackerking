@@ -145,6 +145,12 @@
       "skillPath": "skills/free-tools/SKILL.md",
       "computedHash": "0266eedaea37e19e4c9e2f1cc7ef6cdc8c7ee0726c6f2b5837a061c6ac7f9376"
     },
+    "h3-prompt-writing": {
+      "source": "MiniMax-AI/MiniMax-H3",
+      "sourceType": "github",
+      "skillPath": "skills/h3-prompt-writing/SKILL.md",
+      "computedHash": "e5712d549cd8ee5a3ae5249d984d65b70a14ec9e66e5ec37fe818384c2837e1e"
+    },
     "image": {
       "source": "coreyhaines31/marketingskills",
       "sourceType": "github",
