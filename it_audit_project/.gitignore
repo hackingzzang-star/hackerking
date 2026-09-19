@@ -4,5 +4,8 @@ node_modules/
 .bkit/
 .omc/
 .agents/
-.claude/
+.claude/settings.local.json
 claude.exe
+*백업*.json
+*backup*.json
+*.bak
